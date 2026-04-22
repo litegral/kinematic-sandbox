@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <link rel="icon" href="logo.png" type="image/png">
     <title>Solary - Litegral Labs</title>
@@ -66,9 +67,9 @@
 </head>
 <body>
     <div id="ui-layer">
-        <div id="ui-header" style="display: flex; align-items: center; gap: 15px; margin-bottom: 12px;">
-            <img src="logo.png" alt="Solary Logo" style="height: 40px; filter: drop-shadow(0 2px 10px rgba(0,0,0,0.8));">
-            <h1 id="ui-title" style="margin: 0;">Solar System</h1>
+        <div id="ui-header" style="display: flex; align-items: center; gap: 15px; margin-bottom: 12px; height: 40px;">
+            <img src="logo.png" alt="Solary Logo" style="height: 100%; object-fit: contain; filter: drop-shadow(0 2px 10px rgba(0,0,0,0.8));">
+            <h1 id="ui-title" style="margin: 0; line-height: 40px; transform: translateY(-4px);">Solar System</h1>
         </div>
         <div id="stats" style="display:none;"></div>
     </div>
@@ -80,7 +81,6 @@
         <span id="lang-id" onclick="setLanguage('id')">ID</span>
     </div>
     <div id="onboarding-layer">
-        <img src="logo.png" alt="Solary Logo" style="height: 60px; margin-bottom: 20px;">
         <h2 id="ob-title">Loading...</h2>
         <div id="ob-content"></div>
         <div id="ob-actions"></div>
