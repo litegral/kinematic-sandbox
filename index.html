@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Solar System Builder</title>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: white; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; }
+        #webcam-video { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 5; transform: scaleX(-1); }
+        #ui-layer { position: absolute; top: 20px; left: 20px; z-index: 20; pointer-events: none; text-shadow: 1px 1px 2px black; }
+        h1 { margin: 0 0 10px 0; font-size: 32px; font-weight: 300; letter-spacing: 2px; color: #ffeb3b; }
+        #stats { font-size: 20px; font-weight: bold; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; backdrop-filter: blur(4px); display: inline-block; }
+        #manual-layer { 
+            position: absolute; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            z-index: 100; 
+            background: rgba(0, 0, 0, 0.85); 
+            padding: 30px; 
+            border-radius: 12px; 
+            border: 2px solid #00ffff; 
+            font-size: 18px; 
+            backdrop-filter: blur(10px); 
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            pointer-events: auto; 
+        }
+        #manual-layer h3 { margin: 0 0 20px 0; font-size: 26px; font-weight: bold; color: #00ffff; text-transform: uppercase; letter-spacing: 1px; }
+        #manual-layer ul { margin: 0 0 25px 0; padding: 0; list-style-type: none; text-align: left; }
+        #manual-layer li { margin-bottom: 15px; line-height: 1.5; }
+        #start-button {
+            background-color: #00ffff;
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: background-color 0.2s;
+        }
+        #start-button:hover {
+            background-color: #00cccc;
+        }
+    </style>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- MediaPipe CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div id="ui-layer">
+        <h1>Solar System Builder</h1>
+        <div id="stats">Drag the planets to their correct orbits!</div>
+    </div>
+    <div id="manual-layer">
+        <h3>Welcome to Solar System Builder!</h3>
+        <ul>
+            <li>🤏 <strong>Grab:</strong> Pinch your fingers near a planet.</li>
+            <li>🖐️ <strong>Drop:</strong> Open your fingers wide to drop it into an orbit.</li>
+            <li>✨ <strong>Goal:</strong> Drag each planet into its correct orbit, from Sun to Neptune!</li>
+        </ul>
+        <button id="start-button">Start Game</button>
+    </div>
+    <video id="webcam-video" autoplay playsinline></video>
+    <div id="canvas-container"></div>
+
+    <script>
+        let scene, camera, renderer;
+        let sun;
+        let planets = [];
+        let orbits = [];
+
+        const planetDefs = [
+            { name: "Mercury", texture: "textures/2k_mercury.jpg", radius: 2.2, dist: 16, speed: 0.02 },
+            { name: "Venus", texture: "textures/2k_venus_surface.jpg", radius: 3.3, dist: 24, speed: 0.015 },
+            { name: "Earth", texture: "textures/2k_earth_daymap.jpg", radius: 3.6, dist: 33, speed: 0.01 },
+            { name: "Mars", texture: "textures/2k_mars.jpg", radius: 2.7, dist: 41, speed: 0.008 },
+            { name: "Jupiter", texture: "textures/2k_jupiter.jpg", radius: 7.8, dist: 55, speed: 0.005 },
+            { name: "Saturn", texture: "textures/2k_saturn.jpg", radius: 6.7, dist: 72, speed: 0.003 },
+            { name: "Uranus", texture: "textures/2k_uranus.jpg", radius: 4.9, dist: 87, speed: 0.002 },
+            { name: "Neptune", texture: "textures/2k_neptune.jpg", radius: 4.6, dist: 100, speed: 0.001 }
+        ];
+
+        function initThreeJS() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 180; // Adjusted for expanded orbits
+
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0x606060));
+            const pointLight = new THREE.PointLight(0xffffff, 2.0, 300);
+            scene.add(pointLight);
+
+            const textureLoader = new THREE.TextureLoader();
+
+            // Sun
+            sun = new THREE.Mesh(
+                new THREE.SphereGeometry(12, 32, 32),
+                new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/2k_sun.jpg') })
+            );
+            scene.add(sun);
+
+            // Create orbits and planets
+            planetDefs.forEach((def, index) => {
+                // Orbit ring
+                const orbitGeo = new THREE.RingGeometry(def.dist - 0.4, def.dist + 0.4, 64);
+                const orbitMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.15 });
+                const orbit = new THREE.Mesh(orbitGeo, orbitMat);
+                orbit.userData = { targetPlanet: def.name, index: index, dist: def.dist };
+                scene.add(orbit);
+                orbits.push(orbit);
+
+                // Planet
+                const pMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(def.radius, 32, 32),
+                    new THREE.MeshPhongMaterial({ map: textureLoader.load(def.texture) })
+                );
+                
+                // Spread planets evenly into two columns (Left and Right) so they never overlap
+                const side = (index % 2 === 0) ? -1 : 1; // -1 for left, 1 for right
+                const row = Math.floor(index / 2); // 0, 1, 2, 3
+                
+                const spawnX = side * 140; // Safely outside the outermost orbit
+                const spawnY = 60 - (row * 40); // 60, 20, -20, -60
+                
+                pMesh.position.set(spawnX, spawnY, 0);
+
+                scene.add(pMesh);
+                planets.push({
+                    mesh: pMesh,
+                    def: def,
+                    placed: false,
+                    angle: 0
+                });
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            animate();
+        }
+
+        // Webcam Setup
+        async function initWebcam() {
+            const videoElement = document.getElementById('webcam-video');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
+                });
+                videoElement.srcObject = stream;
+                return new Promise((resolve) => {
+                    videoElement.onloadedmetadata = () => {
+                        videoElement.play();
+                        resolve(videoElement);
+                    };
+                });
+            } catch (err) {
+                console.error("Error accessing webcam:", err);
+            }
+        }
+
+        // MediaPipe Hand Tracking
+        let handMeshes = [];
+        let handsInstance;
+        let handLandmarks = null;
+        let lastVideoTime = -1;
+
+        function initHandTracking() {
+            const geometry = new THREE.SphereGeometry(1.0, 16, 16);
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ffff }); 
+            for (let i = 0; i < 21; i++) {
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.visible = false;
+                mesh.position.set(0, -1000, 0);
+                scene.add(mesh);
+                handMeshes.push(mesh);
+            }
+
+            handsInstance = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+            handsInstance.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7 });
+            handsInstance.onResults(results => {
+                handLandmarks = (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) ? results.multiHandLandmarks[0] : null;
+            });
+            processVideoFrame();
+        }
+
+        async function processVideoFrame() {
+            const videoElement = document.getElementById('webcam-video');
+            if (videoElement.readyState >= 2 && videoElement.currentTime !== lastVideoTime) {
+                lastVideoTime = videoElement.currentTime;
+                if (handsInstance) await handsInstance.send({image: videoElement});
+            }
+            requestAnimationFrame(processVideoFrame);
+        }
+
+        function getDistance(lm1, lm2) {
+            return Math.sqrt((lm1.x-lm2.x)**2 + (lm1.y-lm2.y)**2 + (lm1.z-lm2.z)**2);
+        }
+
+        function detectGesture(landmarks) {
+            if (!landmarks) return "None";
+            const thumbTip = landmarks[4];
+            const indexTip = landmarks[8];
+            const pinchDist = getDistance(thumbTip, indexTip);
+            
+            // Pinch to grab, open wide to drop. 
+            // The gap between 0.08 and 0.12 acts as a deadzone so jitter doesn't drop the planet!
+            if (pinchDist < 0.08) return "Pinch";
+            if (pinchDist > 0.12) return "Open";
+            
+            return "Hold"; 
+        }
+
+        let grabbedPlanet = null;
+
+        function handleInteraction() {
+            if (!handLandmarks) {
+                // If tracking is lost, keep the grabbed planet in hand, just don't move it
+                handMeshes.forEach(m => m.visible = false);
+                return;
+            }
+
+            const currentGesture = detectGesture(handLandmarks);
+            
+            // Map hand pos
+            const distance = camera.position.z;
+            const vFov = camera.fov * Math.PI / 180;
+            const planeHeightAtZ0 = 2 * Math.tan(vFov / 2) * distance;
+            const planeWidthAtZ0 = planeHeightAtZ0 * camera.aspect;
+
+            for (let i = 0; i < 21; i++) {
+                const m = handMeshes[i];
+                m.visible = true;
+                const mappedX = (0.5 - handLandmarks[i].x) * planeWidthAtZ0;
+                const mappedY = (0.5 - handLandmarks[i].y) * planeHeightAtZ0;
+                
+                const targetPos = new THREE.Vector3(mappedX, mappedY, 0);
+                if (m.position.y === -1000) m.position.copy(targetPos);
+                else m.position.lerp(targetPos, 0.2); 
+            }
+
+            const handWorldPos = handMeshes[8].position; // Use smoothed index finger
+
+            if (currentGesture === "Pinch") {
+                if (!grabbedPlanet) {
+                    // Grab nearest unplaced planet
+                    let nearest = null;
+                    let minDist = 50.0; // Huge grab radius!
+                    for (let p of planets) {
+                        if (p.placed) continue;
+                        const dist = p.mesh.position.distanceTo(handWorldPos);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            nearest = p;
+                        }
+                    }
+                    if (nearest) grabbedPlanet = nearest;
+                }
+            } else if (currentGesture === "Open") {
+                if (grabbedPlanet) {
+                    // Check if dropped near a ring
+                    const distToCenter = grabbedPlanet.mesh.position.length();
+                    let closestOrbit = null;
+                    let minOrbitDist = 8.0; // tolerance
+                    for (let o of orbits) {
+                        const d = Math.abs(distToCenter - o.userData.dist);
+                        if (d < minOrbitDist) {
+                            minOrbitDist = d;
+                            closestOrbit = o;
+                        }
+                    }
+
+                    if (closestOrbit) {
+                        if (closestOrbit.userData.targetPlanet === grabbedPlanet.def.name) {
+                            // Correct Placement
+                            grabbedPlanet.placed = true;
+                            grabbedPlanet.angle = Math.atan2(grabbedPlanet.mesh.position.y, grabbedPlanet.mesh.position.x);
+                            closestOrbit.material.color.setHex(0x00ff00); 
+                            closestOrbit.material.opacity = 0.5;
+                            document.getElementById('stats').innerText = `Correct! ${grabbedPlanet.def.name} placed.`;
+                            document.getElementById('stats').style.color = '#00ff00';
+                            
+                            // Check win
+                            if (planets.every(p => p.placed)) {
+                                document.getElementById('stats').innerText = "🎉 YOU BUILT THE SOLAR SYSTEM! 🎉";
+                            }
+                        } else {
+                            // Wrong Placement
+                            document.getElementById('stats').innerText = `Oops! That orbit belongs to ${closestOrbit.userData.targetPlanet}. This is ${grabbedPlanet.def.name}!`;
+                            document.getElementById('stats').style.color = '#ff4444';
+                        }
+                    } else {
+                        document.getElementById('stats').innerText = "Drag the planets to their correct orbits!";
+                        document.getElementById('stats').style.color = '#ffeb3b';
+                    }
+                    grabbedPlanet = null;
+                }
+            }
+            
+            // Always move the grabbed planet if we are holding it, even in the "Hold" deadzone
+            if (grabbedPlanet) {
+                grabbedPlanet.mesh.position.lerp(handWorldPos, 0.4);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            handleInteraction();
+
+            sun.rotation.y += 0.005;
+            
+            for (let p of planets) {
+                // Add a small rotation to the planet itself so it spins!
+                p.mesh.rotation.y += 0.01;
+
+                if (p.placed) {
+                    // Orbit around sun
+                    p.angle += p.def.speed;
+                    p.mesh.position.x = Math.cos(p.angle) * p.def.dist;
+                    p.mesh.position.y = Math.sin(p.angle) * p.def.dist;
+                } else if (p !== grabbedPlanet) {
+                    // Small idle float for unplaced planets
+                    p.mesh.position.y += Math.sin(Date.now() * 0.002 + p.def.dist) * 0.05;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            document.getElementById('start-button').addEventListener('click', () => {
+                document.getElementById('manual-layer').style.display = 'none';
+            });
+            initThreeJS();
+            await initWebcam();
+            initHandTracking();
+        });
+    </script>
+</body>
+</html>
