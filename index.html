@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Solar System</title>
+    <title>Solary - Litegral Labs</title>
     <style>
         body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #fff; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; }
@@ -11,13 +11,19 @@
         #webcam-video { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 5; transform: scaleX(-1); filter: grayscale(80%) brightness(0.3) contrast(1.3); }
         
         #ui-layer { position: absolute; top: 40px; left: 40px; z-index: 20; pointer-events: none; }
-        h1 { margin: 0 0 12px 0; font-size: 24px; font-weight: 300; letter-spacing: 6px; color: #fff; text-transform: uppercase; opacity: 0.9; }
-        #stats { font-size: 14px; font-weight: 400; letter-spacing: 1px; color: #ccc; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); transition: color 0.3s; }
+        h1 { margin: 0 0 12px 0; font-size: 24px; font-weight: 300; letter-spacing: 6px; color: #fff; text-transform: uppercase; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+        #stats { font-size: 14px; font-weight: 400; letter-spacing: 1px; color: #fff; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); transition: color 0.3s; }
         
-        #lang-toggle { position: absolute; top: 40px; right: 40px; z-index: 100; font-size: 16px; letter-spacing: 2px; color: #666; cursor: pointer; user-select: none; }
-        #lang-toggle span { transition: color 0.3s; padding: 5px; }
-        #lang-toggle span:hover { color: #aaa; }
-        #lang-toggle span.active { color: #fff; font-weight: 600; }
+        #top-controls { position: absolute; top: 40px; right: 40px; z-index: 100; font-size: 16px; letter-spacing: 2px; color: #aaa; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px; }
+        #top-controls span { transition: color 0.3s; padding: 5px; }
+        #top-controls span:hover { color: #fff; }
+        #top-controls span.active { color: #fff; font-weight: 600; }
+        #top-controls .divider { cursor: default; color: #666; }
+        #bgm-toggle { font-size: 20px; color: #fff; }
+        
+        #credit { position: absolute; bottom: 30px; right: 40px; z-index: 100; font-size: 12px; letter-spacing: 1px; color: #888; }
+        #credit a { color: #ccc; text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        #credit a:hover { color: #fff; }
         
         #onboarding-layer { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
@@ -25,37 +31,59 @@
             padding: 50px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); 
             text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9);
             width: 85%; max-width: 550px;
-            backdrop-filter: blur(15px); transition: opacity 1s ease;
+            backdrop-filter: blur(15px);
         }
-        #onboarding-layer h2 { margin: 0 0 25px 0; font-weight: 200; font-size: 28px; letter-spacing: 4px; text-transform: uppercase; color: #fff; }
-        #ob-content p { color: #aaa; line-height: 1.8; font-size: 16px; margin-bottom: 20px; font-weight: 300; }
-        #ob-content strong { color: #fff; font-weight: 500; }
+        #onboarding-layer h2 { margin: 0 0 25px 0; font-weight: 300; font-size: 32px; letter-spacing: 3px; text-transform: uppercase; color: #fff; }
+        #ob-content p { color: #ddd; line-height: 1.8; font-size: 18px; margin-bottom: 20px; font-weight: 300; }
+        #ob-content strong { color: #fff; font-weight: 600; }
         
         .ob-btn {
             background-color: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, 0.4);
-            padding: 12px 24px; font-size: 14px; letter-spacing: 2px; cursor: pointer;
+            padding: 12px 24px; font-size: 15px; letter-spacing: 2px; cursor: pointer; font-weight: 600;
             border-radius: 6px; transition: all 0.3s; margin: 10px; font-family: inherit; text-transform: uppercase;
         }
         .ob-btn:hover { background-color: rgba(255, 255, 255, 0.1); border-color: #fff; }
 
         .success-text { color: #fff !important; }
-        .error-text { color: #888 !important; }
+        .error-text { color: #ff6666 !important; }
+        
+        #win-layer {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 200; pointer-events: none; background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px); opacity: 0;
+        }
+        .win-box {
+            background: rgba(15, 15, 15, 0.9); padding: 50px; border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2); text-align: center;
+            box-shadow: 0 0 100px rgba(255,255,255,0.1); pointer-events: auto;
+        }
+        .win-box h1 { font-size: 28px; margin-bottom: 30px; color: #fff; letter-spacing: 2px; text-transform: uppercase; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 </head>
 <body>
     <div id="ui-layer">
         <h1 id="ui-title">Solar System</h1>
         <div id="stats" style="display:none;"></div>
     </div>
-    <div id="lang-toggle">
-        <span id="lang-en" class="active" onclick="setLanguage('en')">EN</span> | <span id="lang-id" onclick="setLanguage('id')">ID</span>
+    <div id="top-controls">
+        <span id="bgm-toggle" onclick="toggleBGM()" title="Toggle Music">🔇</span>
+        <span class="divider">|</span>
+        <span id="lang-en" class="active" onclick="setLanguage('en')">EN</span>
+        <span class="divider">|</span>
+        <span id="lang-id" onclick="setLanguage('id')">ID</span>
     </div>
     <div id="onboarding-layer">
         <h2 id="ob-title">Loading...</h2>
         <div id="ob-content"></div>
         <div id="ob-actions"></div>
+    </div>
+    <div id="win-layer" style="display:none;"></div>
+    <div id="credit">
+        Powered by <a href="https://litegral.com" target="_blank">Litegral Labs</a>
     </div>
     <video id="webcam-video" autoplay playsinline></video>
     <div id="canvas-container"></div>
@@ -63,28 +91,29 @@
     <script>
         const i18n = {
             en: {
-                title: "Solar System",
+                title: "Solary",
                 statusDrag: "Drag the planets to their correct rings.",
                 statusCorrect: "Great job! You placed {planet}.",
                 statusWrong: "Oops! That ring belongs to {target}, not {planet}.",
-                statusWin: "You did it! The Solar System is complete!",
+                statusWin: "You did it! Solary is complete!",
                 
                 langTitle: "Select Language / Pilih Bahasa",
                 
-                introTitle: "Build the Solar System!",
-                introText: "Welcome! In this game, you will use your hands to grab planets and put them in the correct order around the Sun.",
+                introTitle: "Welcome to Solary",
+                introText: "In this game, you will use your hands to grab planets and put them in the correct order around the Sun.",
                 introBtn: "Start Camera",
                 
                 camTitle: "Camera Needed",
                 camText: "Please click 'Allow' when your browser asks for camera access so the game can see your hands.",
                 
                 loadingTitle: "Getting Ready...",
-                loadingText: "Turning on the camera and finding your hands...",
+                loadingText: "Camera is on. Please show your hand to the camera...",
                 
                 guideTitle: "You're Ready to Play!",
                 guideText1: "Use your hand like a claw machine.",
                 guideText2: "<strong>Pinch</strong> your fingers to grab a planet.<br/><strong>Open</strong> your hand to drop it in a ring.",
                 guideAction: "Show a 👍 (Thumbs Up) to the camera to start playing!",
+                btnRestart: "Play Again",
                 
                 planetNames: {
                     Mercury: "Mercury", Venus: "Venus", Earth: "Earth", Mars: "Mars", 
@@ -92,28 +121,29 @@
                 }
             },
             id: {
-                title: "Tata Surya",
+                title: "Solary",
                 statusDrag: "Tarik planet ke cincin yang tepat.",
                 statusCorrect: "Bagus! Kamu menempatkan {planet}.",
                 statusWrong: "Ups! Cincin itu milik {target}, bukan {planet}.",
-                statusWin: "Berhasil! Tata Surya sudah lengkap!",
+                statusWin: "Berhasil! Solary sudah lengkap!",
                 
                 langTitle: "Select Language / Pilih Bahasa",
                 
-                introTitle: "Bangun Tata Surya!",
-                introText: "Selamat datang! Di permainan ini, kamu akan menggunakan tanganmu untuk mengambil planet dan menyusunnya mengelilingi Matahari.",
+                introTitle: "Selamat Datang di Solary",
+                introText: "Di permainan ini, kamu akan menggunakan tanganmu untuk mengambil planet dan menyusunnya mengelilingi Matahari.",
                 introBtn: "Nyalakan Kamera",
                 
                 camTitle: "Butuh Kamera",
                 camText: "Mohon klik 'Izinkan' saat browser meminta akses kamera agar permainan bisa melihat tanganmu.",
                 
                 loadingTitle: "Bersiap-siap...",
-                loadingText: "Menyalakan kamera dan mencari tanganmu...",
+                loadingText: "Kamera kamu sudah terdeteksi. Silakan tunjukkan tanganmu ke kamera...",
                 
                 guideTitle: "Kamu Siap Bermain!",
                 guideText1: "Gunakan tanganmu seperti mesin capit.",
                 guideText2: "<strong>Jepit</strong> jarimu untuk mengambil planet.<br/><strong>Buka</strong> tanganmu untuk meletakkannya di cincin.",
                 guideAction: "Tunjukkan 👍 (Jempol) ke kamera untuk mulai bermain!",
+                btnRestart: "Main Lagi",
                 
                 planetNames: {
                     Mercury: "Merkurius", Venus: "Venus", Earth: "Bumi", Mars: "Mars", 
@@ -131,6 +161,8 @@
             obState = "intro"; 
         }
 
+        let isFirstRender = true;
+
         function updateUIText() {
             const t = i18n[currentLang];
             document.getElementById('ui-title').innerText = t.title;
@@ -139,33 +171,47 @@
             const obContent = document.getElementById('ob-content');
             const obActions = document.getElementById('ob-actions');
             
-            obActions.innerHTML = '';
-            
-            if (obState === "langSelect") {
-                obTitle.innerText = t.langTitle;
-                obContent.innerHTML = '';
-                obActions.innerHTML = `
-                    <button class="ob-btn" onclick="chooseLanguage('en')">English</button>
-                    <button class="ob-btn" onclick="chooseLanguage('id')">Bahasa Indonesia</button>
-                `;
-            } else if (obState === "intro") {
-                obTitle.innerText = t.introTitle;
-                obContent.innerHTML = `<p>${t.introText}</p>`;
-                obActions.innerHTML = `<button class="ob-btn" onclick="startScanner()">${t.introBtn}</button>`;
-            } else if (obState === "requestCam") {
-                obTitle.innerText = t.camTitle;
-                obContent.innerHTML = `<p>${t.camText}</p>`;
-            } else if (obState === "loading") {
-                obTitle.innerText = t.loadingTitle;
-                obContent.innerHTML = `<p>${t.loadingText}</p>`;
-            } else if (obState === "guide") {
-                obTitle.innerText = t.guideTitle;
-                obContent.innerHTML = `
-                    <p>${t.guideText1}</p>
-                    <p>${t.guideText2}</p>
-                    <br/>
-                    <p><strong>${t.guideAction}</strong></p>
-                `;
+            const renderContent = () => {
+                obActions.innerHTML = '';
+                
+                if (obState === "langSelect") {
+                    obTitle.innerText = t.langTitle;
+                    obContent.innerHTML = '';
+                    obActions.innerHTML = `
+                        <button class="ob-btn" onclick="chooseLanguage('en')">English</button>
+                        <button class="ob-btn" onclick="chooseLanguage('id')">Bahasa Indonesia</button>
+                    `;
+                } else if (obState === "intro") {
+                    obTitle.innerText = t.introTitle;
+                    obContent.innerHTML = `<p>${t.introText}</p>`;
+                    obActions.innerHTML = `<button class="ob-btn" onclick="startScanner()">${t.introBtn}</button>`;
+                } else if (obState === "requestCam") {
+                    obTitle.innerText = t.camTitle;
+                    obContent.innerHTML = `<p>${t.camText}</p>`;
+                } else if (obState === "loading") {
+                    obTitle.innerText = t.loadingTitle;
+                    obContent.innerHTML = `<p>${t.loadingText}</p>`;
+                } else if (obState === "guide") {
+                    obTitle.innerText = t.guideTitle;
+                    obContent.innerHTML = `
+                        <p>${t.guideText1}</p>
+                        <p>${t.guideText2}</p>
+                        <br/>
+                        <p><strong>${t.guideAction}</strong></p>
+                    `;
+                }
+            };
+
+            if (isFirstRender) {
+                isFirstRender = false;
+                renderContent();
+                gsap.set([obTitle, obContent, obActions], { opacity: 1 });
+            } else {
+                gsap.killTweensOf([obTitle, obContent, obActions]);
+                gsap.to([obTitle, obContent, obActions], { opacity: 0, duration: 0.15, onComplete: () => {
+                    renderContent();
+                    gsap.fromTo([obTitle, obContent, obActions], { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.05 });
+                }});
             }
         }
 
@@ -197,14 +243,15 @@
         const textureLoader = new THREE.TextureLoader();
 
         const planetDefs = [
-            { name: "Mercury", texture: "textures/2k_mercury.jpg", radius: 2.2, dist: 16, speed: 0.02 },
-            { name: "Venus", texture: "textures/2k_venus_surface.jpg", radius: 3.3, dist: 24, speed: 0.015 },
-            { name: "Earth", texture: "textures/2k_earth_daymap.jpg", radius: 3.6, dist: 33, speed: 0.01 },
-            { name: "Mars", texture: "textures/2k_mars.jpg", radius: 2.7, dist: 41, speed: 0.008 },
-            { name: "Jupiter", texture: "textures/2k_jupiter.jpg", radius: 7.8, dist: 55, speed: 0.005 },
-            { name: "Saturn", texture: "textures/2k_saturn.jpg", radius: 6.7, dist: 72, speed: 0.003 },
-            { name: "Uranus", texture: "textures/2k_uranus.jpg", radius: 4.9, dist: 87, speed: 0.002 },
-            { name: "Neptune", texture: "textures/2k_neptune.jpg", radius: 4.6, dist: 100, speed: 0.001 }
+            // Speeds (orbit) and Spins (axial rotation) are now mathematically scaled relative to Earth (Earth orbit = 0.01, Earth spin = 0.02)
+            { name: "Mercury", texture: "textures/2k_mercury.jpg", radius: 2.2, dist: 16, speed: 0.0415, spin: 0.00034 },
+            { name: "Venus", texture: "textures/2k_venus_surface.jpg", radius: 3.3, dist: 24, speed: 0.0162, spin: -0.00008 },
+            { name: "Earth", texture: "textures/2k_earth_daymap.jpg", radius: 3.6, dist: 33, speed: 0.0100, spin: 0.0200 },
+            { name: "Mars", texture: "textures/2k_mars.jpg", radius: 2.7, dist: 41, speed: 0.0053, spin: 0.0195 },
+            { name: "Jupiter", texture: "textures/2k_jupiter.jpg", radius: 7.8, dist: 55, speed: 0.00084, spin: 0.0484 },
+            { name: "Saturn", texture: "textures/2k_saturn.jpg", radius: 6.7, dist: 72, speed: 0.00034, spin: 0.0448 },
+            { name: "Uranus", texture: "textures/2k_uranus.jpg", radius: 4.9, dist: 87, speed: 0.00012, spin: -0.0279 },
+            { name: "Neptune", texture: "textures/2k_neptune.jpg", radius: 4.6, dist: 100, speed: 0.00006, spin: 0.0298 }
         ];
 
         function initThreeJS() {
@@ -251,7 +298,9 @@
                     mesh: pMesh,
                     def: def,
                     placed: false,
-                    angle: 0
+                    angle: 0,
+                    spawnX: spawnX,
+                    spawnY: spawnY
                 });
             });
 
@@ -289,6 +338,10 @@
         let handLandmarks = null;
         let lastVideoTime = -1;
 
+        let offscreenCanvas = null;
+        let offscreenCtx = null;
+        const CAM_PADDING = 100; // Pixels of padding to give MediaPipe context at edges
+
         function initHandTracking() {
             const geometry = new THREE.SphereGeometry(1.0, 16, 16);
             const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 }); 
@@ -301,9 +354,30 @@
             }
 
             handsInstance = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-            handsInstance.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7 });
+            // Lower confidence for better tracking near edges and partially occluded hands
+            handsInstance.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
             handsInstance.onResults(results => {
-                handLandmarks = (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) ? results.multiHandLandmarks[0] : null;
+                const videoElement = document.getElementById('webcam-video');
+                const vw = videoElement.videoWidth;
+                const vh = videoElement.videoHeight;
+                
+                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                    if (vw > 0 && vh > 0 && offscreenCanvas) {
+                        const wPad = vw + CAM_PADDING * 2;
+                        const hPad = vh + CAM_PADDING * 2;
+                        
+                        // Map the coordinates back to the unpadded space
+                        handLandmarks = results.multiHandLandmarks[0].map(lm => ({
+                            x: (lm.x * wPad - CAM_PADDING) / vw,
+                            y: (lm.y * hPad - CAM_PADDING) / vh,
+                            z: lm.z
+                        }));
+                    } else {
+                        handLandmarks = results.multiHandLandmarks[0];
+                    }
+                } else {
+                    handLandmarks = null;
+                }
             });
             processVideoFrame();
         }
@@ -312,7 +386,30 @@
             const videoElement = document.getElementById('webcam-video');
             if (videoElement.readyState >= 2 && videoElement.currentTime !== lastVideoTime) {
                 lastVideoTime = videoElement.currentTime;
-                if (handsInstance) await handsInstance.send({image: videoElement});
+                
+                const vw = videoElement.videoWidth;
+                const vh = videoElement.videoHeight;
+                
+                if (vw > 0 && vh > 0) {
+                    if (!offscreenCanvas) {
+                        offscreenCanvas = document.createElement('canvas');
+                        offscreenCtx = offscreenCanvas.getContext('2d');
+                    }
+                    
+                    offscreenCanvas.width = vw + CAM_PADDING * 2;
+                    offscreenCanvas.height = vh + CAM_PADDING * 2;
+                    
+                    // Fill black padding to help MediaPipe distinguish the hand at edges
+                    offscreenCtx.fillStyle = 'black';
+                    offscreenCtx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+                    
+                    // Draw the actual video in the center
+                    offscreenCtx.drawImage(videoElement, CAM_PADDING, CAM_PADDING, vw, vh);
+                    
+                    if (handsInstance) await handsInstance.send({image: offscreenCanvas});
+                } else {
+                    if (handsInstance) await handsInstance.send({image: videoElement});
+                }
             }
             requestAnimationFrame(processVideoFrame);
         }
@@ -328,16 +425,12 @@
             const indexTip = landmarks[8];
             const pinchDist = getDistance(thumbTip, indexTip);
             
-            const numFolded = [8, 12, 16, 20].filter((tipIdx, i) => {
-                const mcpIdx = 5 + i * 4;
-                return getDistance(landmarks[tipIdx], wrist) < getDistance(landmarks[mcpIdx], wrist) - 0.02;
-            }).length;
+            const indexFolded = getDistance(landmarks[8], wrist) < getDistance(landmarks[5], wrist);
+            const middleFolded = getDistance(landmarks[12], wrist) < getDistance(landmarks[9], wrist);
+            const thumbOut = getDistance(thumbTip, landmarks[5]) > 0.1;
 
-            if (numFolded === 4) {
-                const thumbDistToIndexMcp = getDistance(thumbTip, landmarks[5]);
-                if (thumbDistToIndexMcp > 0.1) return "ThumbsUp";
-            }
-
+            if (indexFolded && middleFolded && thumbOut) return "ThumbsUp";
+            
             if (pinchDist < 0.08) return "Pinch";
             if (pinchDist > 0.12) return "Open";
             
@@ -347,6 +440,46 @@
         let grabbedPlanet = null;
         let onboardingComplete = false;
         let trackingInitialized = false;
+
+        function triggerWinState() {
+            const t = i18n[currentLang];
+            const winLayer = document.getElementById('win-layer');
+            winLayer.style.display = 'flex';
+            winLayer.innerHTML = `
+                <div class="win-box">
+                    <h1>✨ ${t.statusWin} ✨</h1>
+                    <button class="ob-btn" onclick="location.reload()">${t.btnRestart}</button>
+                </div>
+            `;
+            
+            // GSAP Animations
+            gsap.to(winLayer, { opacity: 1, duration: 1 });
+            gsap.fromTo('.win-box', { scale: 0.5, y: 50 }, { scale: 1, y: 0, duration: 1.5, ease: "elastic.out(1, 0.5)" });
+            
+            gsap.to('#ui-layer', { y: -50, opacity: 0, duration: 0.5 });
+            gsap.to('#top-controls', { y: -50, opacity: 0, duration: 0.5 });
+
+            // Cinematic sweep
+            gsap.to(camera.position, {
+                z: 220, y: -60, x: 0,
+                duration: 6, ease: "power2.inOut",
+                onUpdate: () => camera.lookAt(scene.position)
+            });
+        }
+
+        function updateStats(text, className) {
+            const stats = document.getElementById('stats');
+            if (stats.innerText === text && stats.className === className) return;
+            stats.innerText = text;
+            stats.className = className || '';
+            
+            // HUD feedback pulse
+            gsap.fromTo(stats, { scale: 1.1 }, { scale: 1, duration: 0.3, ease: "back.out(2)" });
+            
+            if (className === 'error-text') {
+                gsap.fromTo(stats, { x: -10 }, { x: 0, duration: 0.4, ease: "elastic.out(2, 0.2)" });
+            }
+        }
 
         function handleInteraction() {
             const t = i18n[currentLang];
@@ -366,12 +499,20 @@
             if (!onboardingComplete) {
                 if (currentGesture === "ThumbsUp") {
                     onboardingComplete = true;
-                    document.getElementById('onboarding-layer').style.opacity = 0;
-                    setTimeout(() => document.getElementById('onboarding-layer').style.display = 'none', 1000);
+                    // Immediate visual feedback so the user knows it worked
+                    document.getElementById('ob-title').innerText = "🚀";
+                    document.getElementById('ob-content').innerHTML = "";
+                    
+                    const obLayer = document.getElementById('onboarding-layer');
+                    gsap.killTweensOf([document.getElementById('ob-title'), document.getElementById('ob-content'), document.getElementById('ob-actions')]);
+                    
+                    gsap.to(obLayer, { opacity: 0, scale: 0.8, duration: 0.4, ease: "power2.in", onComplete: () => obLayer.style.display = 'none' });
+                    
                     startSpaceBGM();
                     const stats = document.getElementById('stats');
                     stats.style.display = 'inline-block';
-                    stats.innerText = t.statusDrag;
+                    updateStats(t.statusDrag, '');
+                    gsap.fromTo(stats, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out", delay: 0.4 });
                 }
                 return; 
             }
@@ -384,8 +525,14 @@
             for (let i = 0; i < 21; i++) {
                 const m = handMeshes[i];
                 m.visible = true;
-                const mappedX = (0.5 - handLandmarks[i].x) * planeWidthAtZ0;
-                const mappedY = (0.5 - handLandmarks[i].y) * planeHeightAtZ0;
+                
+                // Add a small active area margin (10%) so users don't need to reach the absolute physical edges of the camera
+                const margin = 0.1;
+                const activeX = (handLandmarks[i].x - margin) / (1 - 2 * margin);
+                const activeY = (handLandmarks[i].y - margin) / (1 - 2 * margin);
+                
+                const mappedX = (0.5 - activeX) * planeWidthAtZ0;
+                const mappedY = (0.5 - activeY) * planeHeightAtZ0;
                 
                 const targetPos = new THREE.Vector3(mappedX, mappedY, 0);
                 if (m.position.y === -1000) m.position.copy(targetPos);
@@ -428,27 +575,52 @@
                         if (closestOrbit.userData.targetPlanet === grabbedPlanet.def.name) {
                             grabbedPlanet.placed = true;
                             grabbedPlanet.angle = Math.atan2(grabbedPlanet.mesh.position.y, grabbedPlanet.mesh.position.x);
-                            closestOrbit.material.color.setHex(0xffffff); 
-                            closestOrbit.material.opacity = 0.6;
-                            stats.innerText = t.statusCorrect.replace('{planet}', tPlanet);
-                            stats.className = 'success-text';
                             
-                            if (planets.every(p => p.placed)) {
-                                stats.innerText = t.statusWin;
-                            }
+                            // Success flash
+                            gsap.fromTo(closestOrbit.material, { opacity: 1 }, { opacity: 0.3, duration: 1.5, ease: "power2.out" });
+                            closestOrbit.material.color.setHex(0xffffff); 
+                            
+                            updateStats(t.statusCorrect.replace('{planet}', tPlanet), 'success-text');
+                            
+                            if (planets.every(p => p.placed)) triggerWinState();
                         } else {
-                            stats.innerText = t.statusWrong.replace('{target}', tTarget).replace('{planet}', tPlanet);
-                            stats.className = 'error-text';
+                            updateStats(t.statusWrong.replace('{target}', tTarget).replace('{planet}', tPlanet), 'error-text');
+                            
+                            const wrongPlanet = grabbedPlanet;
+                            const origColor = closestOrbit.material.color.getHex();
+                            
+                            // Error red flash
+                            closestOrbit.material.color.setHex(0xff4444);
+                            gsap.fromTo(closestOrbit.material, { opacity: 0.8 }, { opacity: 0.3, duration: 0.15, yoyo: true, repeat: 3, onComplete: () => {
+                                closestOrbit.material.color.setHex(origColor);
+                            }});
+                            
+                            // Shake and return
+                            gsap.to(wrongPlanet.mesh.position, {
+                                x: "+=3", duration: 0.05, yoyo: true, repeat: 5,
+                                onComplete: () => {
+                                    gsap.to(wrongPlanet.mesh.position, {
+                                        x: wrongPlanet.spawnX, y: wrongPlanet.spawnY, z: 0, 
+                                        duration: 0.8, ease: "back.out(1.2)"
+                                    });
+                                }
+                            });
                         }
                     } else {
-                        stats.innerText = t.statusDrag;
-                        stats.className = '';
+                        // Float back if dropped in space
+                        const floatingPlanet = grabbedPlanet;
+                        gsap.to(floatingPlanet.mesh.position, {
+                            x: floatingPlanet.spawnX, y: floatingPlanet.spawnY, z: 0, 
+                            duration: 0.8, ease: "power2.out"
+                        });
+                        updateStats(t.statusDrag, '');
                     }
                     grabbedPlanet = null;
                 }
             }
             
             if (grabbedPlanet) {
+                gsap.killTweensOf(grabbedPlanet.mesh.position); // Stop return animations if re-grabbed mid-air!
                 grabbedPlanet.mesh.position.lerp(handWorldPos, 0.4);
             }
         }
@@ -457,10 +629,10 @@
             requestAnimationFrame(animate);
             handleInteraction();
 
-            sun.rotation.y += 0.005;
+            sun.rotation.y += 0.0007; // Accurate relative spin for the Sun (27 Earth days)
             
             for (let p of planets) {
-                p.mesh.rotation.y += 0.01;
+                p.mesh.rotation.y += p.def.spin; // Accurate axial rotation
                 if (p.placed) {
                     p.angle += p.def.speed;
                     p.mesh.position.x = Math.cos(p.angle) * p.def.dist;
@@ -473,15 +645,46 @@
         }
 
         let audioCtx;
+        let masterGainNode;
+        let bgmPlaying = false;
+        let bgmManuallyMuted = false;
+
+        function toggleBGM() {
+            if (!audioCtx) {
+                startSpaceBGM();
+                return;
+            }
+            if (bgmPlaying) {
+                masterGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+                masterGainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
+                bgmPlaying = false;
+                bgmManuallyMuted = true;
+                document.getElementById('bgm-toggle').innerText = "🔇";
+            } else {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                masterGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+                masterGainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 2);
+                bgmPlaying = true;
+                bgmManuallyMuted = false;
+                document.getElementById('bgm-toggle').innerText = "🔊";
+            }
+        }
+
         function startSpaceBGM() {
             if (audioCtx) return;
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
             
-            const masterGain = audioCtx.createGain();
-            masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-            masterGain.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 4);
-            masterGain.connect(audioCtx.destination);
+            masterGainNode = audioCtx.createGain();
+            masterGainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            
+            if (!bgmManuallyMuted) {
+                masterGainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 4);
+                bgmPlaying = true;
+                document.getElementById('bgm-toggle').innerText = "🔊";
+            }
+
+            masterGainNode.connect(audioCtx.destination);
 
             const delay = audioCtx.createDelay(3.0); 
             delay.delayTime.value = 1.5; 
@@ -489,7 +692,7 @@
             feedback.gain.value = 0.7; 
             delay.connect(feedback);
             feedback.connect(delay);
-            delay.connect(masterGain);
+            delay.connect(masterGainNode);
 
             const frequencies = [261.63, 392.00, 587.33, 659.25, 783.99]; 
             frequencies.forEach((freq, index) => {
@@ -513,7 +716,7 @@
                 lfo.start();
                 
                 osc.connect(oscGain);
-                oscGain.connect(masterGain);
+                oscGain.connect(masterGainNode);
                 oscGain.connect(delay); 
                 osc.start();
             });
@@ -525,6 +728,11 @@
             else updateUIText();
             
             initThreeJS();
+            
+            // HUD Entrance Animations
+            gsap.from('#ui-title', { y: -30, opacity: 0, duration: 1, ease: "power3.out" });
+            gsap.from('#top-controls', { y: -30, opacity: 0, duration: 1, ease: "power3.out", delay: 0.2 });
+            gsap.from('#onboarding-layer', { scale: 0.9, opacity: 0, duration: 1, ease: "back.out(1.2)", delay: 0.4 });
         });
     </script>
 </body>
