@@ -3,75 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Solar System Builder</title>
+    <title>Solar System</title>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: white; }
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #fff; }
         #canvas-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; }
-        #webcam-video { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 5; transform: scaleX(-1); }
-        #ui-layer { position: absolute; top: 20px; left: 20px; z-index: 20; pointer-events: none; text-shadow: 1px 1px 2px black; }
-        h1 { margin: 0 0 10px 0; font-size: 32px; font-weight: 300; letter-spacing: 2px; color: #ffeb3b; }
-        #stats { font-size: 20px; font-weight: bold; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; backdrop-filter: blur(4px); display: inline-block; }
-        #manual-layer { 
-            position: absolute; 
-            top: 50%; left: 50%; 
-            transform: translate(-50%, -50%); 
-            z-index: 100; 
-            background: rgba(0, 0, 0, 0.85); 
-            padding: 30px; 
-            border-radius: 12px; 
-            border: 2px solid #00ffff; 
-            font-size: 18px; 
-            backdrop-filter: blur(10px); 
-            text-align: center;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
-            pointer-events: auto; 
+        
+        #webcam-video { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 5; transform: scaleX(-1); filter: grayscale(80%) brightness(0.3) contrast(1.3); }
+        
+        #ui-layer { position: absolute; top: 40px; left: 40px; z-index: 20; pointer-events: none; }
+        h1 { margin: 0 0 12px 0; font-size: 24px; font-weight: 300; letter-spacing: 6px; color: #fff; text-transform: uppercase; opacity: 0.9; }
+        #stats { font-size: 14px; font-weight: 400; letter-spacing: 1px; color: #ccc; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); transition: color 0.3s; }
+        
+        #lang-toggle { position: absolute; top: 40px; right: 40px; z-index: 100; font-size: 16px; letter-spacing: 2px; color: #666; cursor: pointer; user-select: none; }
+        #lang-toggle span { transition: color 0.3s; padding: 5px; }
+        #lang-toggle span:hover { color: #aaa; }
+        #lang-toggle span.active { color: #fff; font-weight: 600; }
+        
+        #onboarding-layer { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            z-index: 100; background: rgba(15, 15, 15, 0.85); 
+            padding: 50px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); 
+            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+            width: 85%; max-width: 550px;
+            backdrop-filter: blur(15px); transition: opacity 1s ease;
         }
-        #manual-layer h3 { margin: 0 0 20px 0; font-size: 26px; font-weight: bold; color: #00ffff; text-transform: uppercase; letter-spacing: 1px; }
-        #manual-layer ul { margin: 0 0 25px 0; padding: 0; list-style-type: none; text-align: left; }
-        #manual-layer li { margin-bottom: 15px; line-height: 1.5; }
-        #start-button {
-            background-color: #00ffff;
-            color: #000;
-            border: none;
-            padding: 12px 30px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: background-color 0.2s;
+        #onboarding-layer h2 { margin: 0 0 25px 0; font-weight: 200; font-size: 28px; letter-spacing: 4px; text-transform: uppercase; color: #fff; }
+        #ob-content p { color: #aaa; line-height: 1.8; font-size: 16px; margin-bottom: 20px; font-weight: 300; }
+        #ob-content strong { color: #fff; font-weight: 500; }
+        
+        .ob-btn {
+            background-color: transparent; color: #fff; border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 12px 24px; font-size: 14px; letter-spacing: 2px; cursor: pointer;
+            border-radius: 6px; transition: all 0.3s; margin: 10px; font-family: inherit; text-transform: uppercase;
         }
-        #start-button:hover {
-            background-color: #00cccc;
-        }
+        .ob-btn:hover { background-color: rgba(255, 255, 255, 0.1); border-color: #fff; }
+
+        .success-text { color: #fff !important; }
+        .error-text { color: #888 !important; }
     </style>
-    <!-- Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- MediaPipe CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div id="ui-layer">
-        <h1>Solar System Builder</h1>
-        <div id="stats">Drag the planets to their correct orbits!</div>
+        <h1 id="ui-title">Solar System</h1>
+        <div id="stats" style="display:none;"></div>
     </div>
-    <div id="manual-layer">
-        <h3>Welcome to Solar System Builder!</h3>
-        <ul>
-            <li>🤏 <strong>Grab:</strong> Pinch your fingers near a planet.</li>
-            <li>🖐️ <strong>Drop:</strong> Open your fingers wide to drop it into an orbit.</li>
-            <li>✨ <strong>Goal:</strong> Drag each planet into its correct orbit, from Sun to Neptune!</li>
-        </ul>
-        <button id="start-button">Start Game</button>
+    <div id="lang-toggle">
+        <span id="lang-en" class="active" onclick="setLanguage('en')">EN</span> | <span id="lang-id" onclick="setLanguage('id')">ID</span>
+    </div>
+    <div id="onboarding-layer">
+        <h2 id="ob-title">Loading...</h2>
+        <div id="ob-content"></div>
+        <div id="ob-actions"></div>
     </div>
     <video id="webcam-video" autoplay playsinline></video>
     <div id="canvas-container"></div>
 
     <script>
-        let scene, camera, renderer;
-        let sun;
+        const i18n = {
+            en: {
+                title: "Solar System",
+                statusDrag: "Drag the planets to their correct rings.",
+                statusCorrect: "Great job! You placed {planet}.",
+                statusWrong: "Oops! That ring belongs to {target}, not {planet}.",
+                statusWin: "You did it! The Solar System is complete!",
+                
+                langTitle: "Select Language / Pilih Bahasa",
+                
+                introTitle: "Build the Solar System!",
+                introText: "Welcome! In this game, you will use your hands to grab planets and put them in the correct order around the Sun.",
+                introBtn: "Start Camera",
+                
+                camTitle: "Camera Needed",
+                camText: "Please click 'Allow' when your browser asks for camera access so the game can see your hands.",
+                
+                loadingTitle: "Getting Ready...",
+                loadingText: "Turning on the camera and finding your hands...",
+                
+                guideTitle: "You're Ready to Play!",
+                guideText1: "Use your hand like a claw machine.",
+                guideText2: "<strong>Pinch</strong> your fingers to grab a planet.<br/><strong>Open</strong> your hand to drop it in a ring.",
+                guideAction: "Show a 👍 (Thumbs Up) to the camera to start playing!",
+                
+                planetNames: {
+                    Mercury: "Mercury", Venus: "Venus", Earth: "Earth", Mars: "Mars", 
+                    Jupiter: "Jupiter", Saturn: "Saturn", Uranus: "Uranus", Neptune: "Neptune"
+                }
+            },
+            id: {
+                title: "Tata Surya",
+                statusDrag: "Tarik planet ke cincin yang tepat.",
+                statusCorrect: "Bagus! Kamu menempatkan {planet}.",
+                statusWrong: "Ups! Cincin itu milik {target}, bukan {planet}.",
+                statusWin: "Berhasil! Tata Surya sudah lengkap!",
+                
+                langTitle: "Select Language / Pilih Bahasa",
+                
+                introTitle: "Bangun Tata Surya!",
+                introText: "Selamat datang! Di permainan ini, kamu akan menggunakan tanganmu untuk mengambil planet dan menyusunnya mengelilingi Matahari.",
+                introBtn: "Nyalakan Kamera",
+                
+                camTitle: "Butuh Kamera",
+                camText: "Mohon klik 'Izinkan' saat browser meminta akses kamera agar permainan bisa melihat tanganmu.",
+                
+                loadingTitle: "Bersiap-siap...",
+                loadingText: "Menyalakan kamera dan mencari tanganmu...",
+                
+                guideTitle: "Kamu Siap Bermain!",
+                guideText1: "Gunakan tanganmu seperti mesin capit.",
+                guideText2: "<strong>Jepit</strong> jarimu untuk mengambil planet.<br/><strong>Buka</strong> tanganmu untuk meletakkannya di cincin.",
+                guideAction: "Tunjukkan 👍 (Jempol) ke kamera untuk mulai bermain!",
+                
+                planetNames: {
+                    Mercury: "Merkurius", Venus: "Venus", Earth: "Bumi", Mars: "Mars", 
+                    Jupiter: "Yupiter", Saturn: "Saturnus", Uranus: "Uranus", Neptune: "Neptunus"
+                }
+            }
+        };
+        
+        let currentLang = 'en';
+        let obState = "langSelect";
+        let savedLang = localStorage.getItem('userLang');
+        
+        if (savedLang) {
+            currentLang = savedLang;
+            obState = "intro"; 
+        }
+
+        function updateUIText() {
+            const t = i18n[currentLang];
+            document.getElementById('ui-title').innerText = t.title;
+            
+            const obTitle = document.getElementById('ob-title');
+            const obContent = document.getElementById('ob-content');
+            const obActions = document.getElementById('ob-actions');
+            
+            obActions.innerHTML = '';
+            
+            if (obState === "langSelect") {
+                obTitle.innerText = t.langTitle;
+                obContent.innerHTML = '';
+                obActions.innerHTML = `
+                    <button class="ob-btn" onclick="chooseLanguage('en')">English</button>
+                    <button class="ob-btn" onclick="chooseLanguage('id')">Bahasa Indonesia</button>
+                `;
+            } else if (obState === "intro") {
+                obTitle.innerText = t.introTitle;
+                obContent.innerHTML = `<p>${t.introText}</p>`;
+                obActions.innerHTML = `<button class="ob-btn" onclick="startScanner()">${t.introBtn}</button>`;
+            } else if (obState === "requestCam") {
+                obTitle.innerText = t.camTitle;
+                obContent.innerHTML = `<p>${t.camText}</p>`;
+            } else if (obState === "loading") {
+                obTitle.innerText = t.loadingTitle;
+                obContent.innerHTML = `<p>${t.loadingText}</p>`;
+            } else if (obState === "guide") {
+                obTitle.innerText = t.guideTitle;
+                obContent.innerHTML = `
+                    <p>${t.guideText1}</p>
+                    <p>${t.guideText2}</p>
+                    <br/>
+                    <p><strong>${t.guideAction}</strong></p>
+                `;
+            }
+        }
+
+        function setLanguage(langCode) {
+            currentLang = langCode;
+            localStorage.setItem('userLang', langCode);
+            document.getElementById('lang-en').className = langCode === 'en' ? 'active' : '';
+            document.getElementById('lang-id').className = langCode === 'id' ? 'active' : '';
+            updateUIText();
+        }
+
+        function chooseLanguage(langCode) {
+            setLanguage(langCode);
+            obState = "intro";
+            updateUIText();
+        }
+
+        function startScanner() {
+            obState = "requestCam";
+            updateUIText();
+            initWebcam().then(() => {
+                initHandTracking();
+            });
+        }
+
+        let scene, camera, renderer, sun;
         let planets = [];
         let orbits = [];
+        const textureLoader = new THREE.TextureLoader();
 
         const planetDefs = [
             { name: "Mercury", texture: "textures/2k_mercury.jpg", radius: 2.2, dist: 16, speed: 0.02 },
@@ -88,48 +211,39 @@
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 180; // Adjusted for expanded orbits
+            camera.position.z = 180; 
 
             renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0x606060));
-            const pointLight = new THREE.PointLight(0xffffff, 2.0, 300);
+            scene.add(new THREE.AmbientLight(0x444444));
+            const pointLight = new THREE.PointLight(0xffffff, 2.0, 400);
             scene.add(pointLight);
 
-            const textureLoader = new THREE.TextureLoader();
-
-            // Sun
             sun = new THREE.Mesh(
                 new THREE.SphereGeometry(12, 32, 32),
                 new THREE.MeshBasicMaterial({ map: textureLoader.load('textures/2k_sun.jpg') })
             );
             scene.add(sun);
 
-            // Create orbits and planets
             planetDefs.forEach((def, index) => {
-                // Orbit ring
-                const orbitGeo = new THREE.RingGeometry(def.dist - 0.4, def.dist + 0.4, 64);
-                const orbitMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.15 });
+                const orbitGeo = new THREE.RingGeometry(def.dist - 0.2, def.dist + 0.2, 64);
+                const orbitMat = new THREE.MeshBasicMaterial({ color: 0x888888, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
                 const orbit = new THREE.Mesh(orbitGeo, orbitMat);
                 orbit.userData = { targetPlanet: def.name, index: index, dist: def.dist };
                 scene.add(orbit);
                 orbits.push(orbit);
 
-                // Planet
                 const pMesh = new THREE.Mesh(
                     new THREE.SphereGeometry(def.radius, 32, 32),
                     new THREE.MeshPhongMaterial({ map: textureLoader.load(def.texture) })
                 );
                 
-                // Spread planets evenly into two columns (Left and Right) so they never overlap
-                const side = (index % 2 === 0) ? -1 : 1; // -1 for left, 1 for right
-                const row = Math.floor(index / 2); // 0, 1, 2, 3
-                
-                const spawnX = side * 140; // Safely outside the outermost orbit
-                const spawnY = 60 - (row * 40); // 60, 20, -20, -60
-                
+                const side = (index % 2 === 0) ? -1 : 1; 
+                const row = Math.floor(index / 2); 
+                const spawnX = side * 140; 
+                const spawnY = 60 - (row * 40); 
                 pMesh.position.set(spawnX, spawnY, 0);
 
                 scene.add(pMesh);
@@ -149,7 +263,6 @@
             animate();
         }
 
-        // Webcam Setup
         async function initWebcam() {
             const videoElement = document.getElementById('webcam-video');
             try {
@@ -157,6 +270,8 @@
                     video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } } 
                 });
                 videoElement.srcObject = stream;
+                obState = "loading";
+                updateUIText();
                 return new Promise((resolve) => {
                     videoElement.onloadedmetadata = () => {
                         videoElement.play();
@@ -164,11 +279,11 @@
                     };
                 });
             } catch (err) {
-                console.error("Error accessing webcam:", err);
+                document.getElementById('ob-content').innerHTML = `<p style="color:#ff6666">Optical link failed. Please enable camera access in your browser to play.</p>`;
+                document.getElementById('ob-actions').innerHTML = `<button class="ob-btn" onclick="startScanner()">Retry</button>`;
             }
         }
 
-        // MediaPipe Hand Tracking
         let handMeshes = [];
         let handsInstance;
         let handLandmarks = null;
@@ -176,7 +291,7 @@
 
         function initHandTracking() {
             const geometry = new THREE.SphereGeometry(1.0, 16, 16);
-            const material = new THREE.MeshBasicMaterial({ color: 0x00ffff }); 
+            const material = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4 }); 
             for (let i = 0; i < 21; i++) {
                 const mesh = new THREE.Mesh(geometry, material);
                 mesh.visible = false;
@@ -208,12 +323,21 @@
 
         function detectGesture(landmarks) {
             if (!landmarks) return "None";
+            const wrist = landmarks[0];
             const thumbTip = landmarks[4];
             const indexTip = landmarks[8];
             const pinchDist = getDistance(thumbTip, indexTip);
             
-            // Pinch to grab, open wide to drop. 
-            // The gap between 0.08 and 0.12 acts as a deadzone so jitter doesn't drop the planet!
+            const numFolded = [8, 12, 16, 20].filter((tipIdx, i) => {
+                const mcpIdx = 5 + i * 4;
+                return getDistance(landmarks[tipIdx], wrist) < getDistance(landmarks[mcpIdx], wrist) - 0.02;
+            }).length;
+
+            if (numFolded === 4) {
+                const thumbDistToIndexMcp = getDistance(thumbTip, landmarks[5]);
+                if (thumbDistToIndexMcp > 0.1) return "ThumbsUp";
+            }
+
             if (pinchDist < 0.08) return "Pinch";
             if (pinchDist > 0.12) return "Open";
             
@@ -221,17 +345,37 @@
         }
 
         let grabbedPlanet = null;
+        let onboardingComplete = false;
+        let trackingInitialized = false;
 
         function handleInteraction() {
+            const t = i18n[currentLang];
             if (!handLandmarks) {
-                // If tracking is lost, keep the grabbed planet in hand, just don't move it
                 handMeshes.forEach(m => m.visible = false);
                 return;
             }
 
+            if (!trackingInitialized) {
+                trackingInitialized = true;
+                obState = "guide";
+                updateUIText();
+            }
+
             const currentGesture = detectGesture(handLandmarks);
             
-            // Map hand pos
+            if (!onboardingComplete) {
+                if (currentGesture === "ThumbsUp") {
+                    onboardingComplete = true;
+                    document.getElementById('onboarding-layer').style.opacity = 0;
+                    setTimeout(() => document.getElementById('onboarding-layer').style.display = 'none', 1000);
+                    startSpaceBGM();
+                    const stats = document.getElementById('stats');
+                    stats.style.display = 'inline-block';
+                    stats.innerText = t.statusDrag;
+                }
+                return; 
+            }
+
             const distance = camera.position.z;
             const vFov = camera.fov * Math.PI / 180;
             const planeHeightAtZ0 = 2 * Math.tan(vFov / 2) * distance;
@@ -248,13 +392,12 @@
                 else m.position.lerp(targetPos, 0.2); 
             }
 
-            const handWorldPos = handMeshes[8].position; // Use smoothed index finger
+            const handWorldPos = handMeshes[8].position; 
 
             if (currentGesture === "Pinch") {
                 if (!grabbedPlanet) {
-                    // Grab nearest unplaced planet
                     let nearest = null;
-                    let minDist = 50.0; // Huge grab radius!
+                    let minDist = 50.0; 
                     for (let p of planets) {
                         if (p.placed) continue;
                         const dist = p.mesh.position.distanceTo(handWorldPos);
@@ -267,10 +410,9 @@
                 }
             } else if (currentGesture === "Open") {
                 if (grabbedPlanet) {
-                    // Check if dropped near a ring
                     const distToCenter = grabbedPlanet.mesh.position.length();
                     let closestOrbit = null;
-                    let minOrbitDist = 8.0; // tolerance
+                    let minOrbitDist = 8.0; 
                     for (let o of orbits) {
                         const d = Math.abs(distToCenter - o.userData.dist);
                         if (d < minOrbitDist) {
@@ -279,34 +421,33 @@
                         }
                     }
 
+                    const stats = document.getElementById('stats');
                     if (closestOrbit) {
+                        const tTarget = t.planetNames[closestOrbit.userData.targetPlanet];
+                        const tPlanet = t.planetNames[grabbedPlanet.def.name];
                         if (closestOrbit.userData.targetPlanet === grabbedPlanet.def.name) {
-                            // Correct Placement
                             grabbedPlanet.placed = true;
                             grabbedPlanet.angle = Math.atan2(grabbedPlanet.mesh.position.y, grabbedPlanet.mesh.position.x);
-                            closestOrbit.material.color.setHex(0x00ff00); 
-                            closestOrbit.material.opacity = 0.5;
-                            document.getElementById('stats').innerText = `Correct! ${grabbedPlanet.def.name} placed.`;
-                            document.getElementById('stats').style.color = '#00ff00';
+                            closestOrbit.material.color.setHex(0xffffff); 
+                            closestOrbit.material.opacity = 0.6;
+                            stats.innerText = t.statusCorrect.replace('{planet}', tPlanet);
+                            stats.className = 'success-text';
                             
-                            // Check win
                             if (planets.every(p => p.placed)) {
-                                document.getElementById('stats').innerText = "🎉 YOU BUILT THE SOLAR SYSTEM! 🎉";
+                                stats.innerText = t.statusWin;
                             }
                         } else {
-                            // Wrong Placement
-                            document.getElementById('stats').innerText = `Oops! That orbit belongs to ${closestOrbit.userData.targetPlanet}. This is ${grabbedPlanet.def.name}!`;
-                            document.getElementById('stats').style.color = '#ff4444';
+                            stats.innerText = t.statusWrong.replace('{target}', tTarget).replace('{planet}', tPlanet);
+                            stats.className = 'error-text';
                         }
                     } else {
-                        document.getElementById('stats').innerText = "Drag the planets to their correct orbits!";
-                        document.getElementById('stats').style.color = '#ffeb3b';
+                        stats.innerText = t.statusDrag;
+                        stats.className = '';
                     }
                     grabbedPlanet = null;
                 }
             }
             
-            // Always move the grabbed planet if we are holding it, even in the "Hold" deadzone
             if (grabbedPlanet) {
                 grabbedPlanet.mesh.position.lerp(handWorldPos, 0.4);
             }
@@ -319,30 +460,71 @@
             sun.rotation.y += 0.005;
             
             for (let p of planets) {
-                // Add a small rotation to the planet itself so it spins!
                 p.mesh.rotation.y += 0.01;
-
                 if (p.placed) {
-                    // Orbit around sun
                     p.angle += p.def.speed;
                     p.mesh.position.x = Math.cos(p.angle) * p.def.dist;
                     p.mesh.position.y = Math.sin(p.angle) * p.def.dist;
                 } else if (p !== grabbedPlanet) {
-                    // Small idle float for unplaced planets
                     p.mesh.position.y += Math.sin(Date.now() * 0.002 + p.def.dist) * 0.05;
                 }
             }
-
             renderer.render(scene, camera);
         }
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            document.getElementById('start-button').addEventListener('click', () => {
-                document.getElementById('manual-layer').style.display = 'none';
+        let audioCtx;
+        function startSpaceBGM() {
+            if (audioCtx) return;
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+            
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+            masterGain.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 4);
+            masterGain.connect(audioCtx.destination);
+
+            const delay = audioCtx.createDelay(3.0); 
+            delay.delayTime.value = 1.5; 
+            const feedback = audioCtx.createGain();
+            feedback.gain.value = 0.7; 
+            delay.connect(feedback);
+            feedback.connect(delay);
+            delay.connect(masterGain);
+
+            const frequencies = [261.63, 392.00, 587.33, 659.25, 783.99]; 
+            frequencies.forEach((freq, index) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sine'; 
+                osc.frequency.value = freq;
+                osc.detune.value = (Math.random() - 0.5) * 10;
+                
+                const oscGain = audioCtx.createGain();
+                oscGain.gain.value = 0.05; 
+                
+                const lfo = audioCtx.createOscillator();
+                lfo.type = 'sine';
+                lfo.frequency.value = 0.03 + (index * 0.015); 
+                
+                const lfoGain = audioCtx.createGain();
+                lfoGain.gain.value = 0.05; 
+                
+                lfo.connect(lfoGain);
+                lfoGain.connect(oscGain.gain);
+                lfo.start();
+                
+                osc.connect(oscGain);
+                oscGain.connect(masterGain);
+                oscGain.connect(delay); 
+                osc.start();
             });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Setup correct initial language state based on localStorage
+            if (savedLang) setLanguage(savedLang);
+            else updateUIText();
+            
             initThreeJS();
-            await initWebcam();
-            initHandTracking();
         });
     </script>
 </body>
