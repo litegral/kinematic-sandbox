@@ -128,6 +128,10 @@
                 shareText: "I completed the Solar System in Solary! 🪐\n⏱️ Time: {time}\n🎯 Accuracy: {acc}%\nPlay with your hands at: https://solary.litegral.com",
                 shareSuccess: "Copied!",
                 
+                mobileWarnTitle: "Bigger Screen Recommended",
+                mobileWarnText: "For the best <i>Augmented Reality</i> experience, please use a device with a larger screen.",
+                mobileWarnBtn: "Continue Anyway",
+                
                 planetNames: {
                     Mercury: "Mercury", Venus: "Venus", Earth: "Earth", Mars: "Mars", 
                     Jupiter: "Jupiter", Saturn: "Saturn", Uranus: "Uranus", Neptune: "Neptune"
@@ -162,6 +166,10 @@
                 shareText: "Saya berhasil menyusun Tata Surya di Solary! 🪐\n⏱️ Waktu: {time}\n🎯 Akurasi: {acc}%\nMainkan dengan tanganmu di: https://solary.litegral.com",
                 shareSuccess: "Disalin!",
                 
+                mobileWarnTitle: "Disarankan Layar Lebih Besar",
+                mobileWarnText: "Untuk pengalaman <i>Augmented Reality</i> terbaik, silakan gunakan perangkat dengan layar yang lebih besar.",
+                mobileWarnBtn: "Tetap Lanjutkan",
+                
                 planetNames: {
                     Mercury: "Merkurius", Venus: "Venus", Earth: "Bumi", Mars: "Mars", 
                     Jupiter: "Yupiter", Saturn: "Saturnus", Uranus: "Uranus", Neptune: "Neptunus"
@@ -170,12 +178,21 @@
         };
         
         let currentLang = 'en';
-        let obState = "langSelect";
         let savedLang = localStorage.getItem('userLang');
+        let isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 768;
         
+        let obState = isMobile ? "mobileWarning" : (savedLang ? "intro" : "langSelect");
+
         if (savedLang) {
             currentLang = savedLang;
-            obState = "intro"; 
+        } else if (isMobile && navigator.language && navigator.language.startsWith('id')) {
+            currentLang = 'id';
+        }
+
+        function continueFromMobile() {
+            if(window.umami) umami.track('Mobile Warning Dismissed');
+            obState = savedLang ? "intro" : "langSelect";
+            updateUIText();
         }
 
         let isFirstRender = true;
@@ -191,7 +208,11 @@
             const renderContent = () => {
                 obActions.innerHTML = '';
                 
-                if (obState === "langSelect") {
+                if (obState === "mobileWarning") {
+                    obTitle.innerText = t.mobileWarnTitle;
+                    obContent.innerHTML = `<p>${t.mobileWarnText}</p>`;
+                    obActions.innerHTML = `<button class="ob-btn" onclick="continueFromMobile()">${t.mobileWarnBtn}</button>`;
+                } else if (obState === "langSelect") {
                     obTitle.innerText = t.langTitle;
                     obContent.innerHTML = '';
                     obActions.innerHTML = `
