@@ -15,11 +15,11 @@
         #stats { font-size: 14px; font-weight: 400; letter-spacing: 1px; color: #fff; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); transition: color 0.3s; }
         
         #top-controls { position: absolute; top: 40px; right: 40px; z-index: 100; font-size: 16px; letter-spacing: 2px; color: #aaa; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px; }
-        #top-controls span { transition: color 0.3s; padding: 5px; }
+        #top-controls span { transition: color 0.3s; padding: 5px; display: flex; align-items: center; }
         #top-controls span:hover { color: #fff; }
         #top-controls span.active { color: #fff; font-weight: 600; }
         #top-controls .divider { cursor: default; color: #666; }
-        #bgm-toggle { font-size: 20px; color: #fff; }
+        #bgm-toggle { color: #fff; }
         
         #credit { position: absolute; bottom: 30px; right: 40px; z-index: 100; font-size: 12px; letter-spacing: 1px; color: #888; }
         #credit a { color: #ccc; text-decoration: none; font-weight: 500; transition: color 0.3s; }
@@ -70,7 +70,7 @@
         <div id="stats" style="display:none;"></div>
     </div>
     <div id="top-controls">
-        <span id="bgm-toggle" onclick="toggleBGM()" title="Toggle Music">🔇</span>
+        <span id="bgm-toggle" onclick="toggleBGM()" title="Toggle Music"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg></span>
         <span class="divider">|</span>
         <span id="lang-en" class="active" onclick="setLanguage('en')">EN</span>
         <span class="divider">|</span>
@@ -276,7 +276,7 @@
 
             planetDefs.forEach((def, index) => {
                 const orbitGeo = new THREE.RingGeometry(def.dist - 0.2, def.dist + 0.2, 64);
-                const orbitMat = new THREE.MeshBasicMaterial({ color: 0x888888, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+                const orbitMat = new THREE.MeshBasicMaterial({ color: 0x888888, side: THREE.DoubleSide, transparent: true, opacity: 0.3, depthWrite: false });
                 const orbit = new THREE.Mesh(orbitGeo, orbitMat);
                 orbit.userData = { targetPlanet: def.name, index: index, dist: def.dist };
                 scene.add(orbit);
@@ -522,19 +522,32 @@
             const planeHeightAtZ0 = 2 * Math.tan(vFov / 2) * distance;
             const planeWidthAtZ0 = planeHeightAtZ0 * camera.aspect;
 
+            const videoElement = document.getElementById('webcam-video');
+            const vAspect = (videoElement.videoWidth || 1) / (videoElement.videoHeight || 1);
+            const wAspect = window.innerWidth / window.innerHeight;
+
             for (let i = 0; i < 21; i++) {
                 const m = handMeshes[i];
                 m.visible = true;
                 
-                // Add a small active area margin (10%) so users don't need to reach the absolute physical edges of the camera
-                const margin = 0.1;
-                const activeX = (handLandmarks[i].x - margin) / (1 - 2 * margin);
-                const activeY = (handLandmarks[i].y - margin) / (1 - 2 * margin);
+                let renderX = handLandmarks[i].x;
+                let renderY = handLandmarks[i].y;
+
+                // Adjust mapping to perfectly align with the CSS object-fit: cover cropping
+                if (wAspect > vAspect) {
+                    const scaledHeight = window.innerWidth / vAspect;
+                    const yOffset = (scaledHeight - window.innerHeight) / 2;
+                    renderY = ((renderY * scaledHeight) - yOffset) / window.innerHeight;
+                } else {
+                    const scaledWidth = window.innerHeight * vAspect;
+                    const xOffset = (scaledWidth - window.innerWidth) / 2;
+                    renderX = ((renderX * scaledWidth) - xOffset) / window.innerWidth;
+                }
                 
-                const mappedX = (0.5 - activeX) * planeWidthAtZ0;
-                const mappedY = (0.5 - activeY) * planeHeightAtZ0;
+                const mappedX = (0.5 - renderX) * planeWidthAtZ0;
+                const mappedY = (0.5 - renderY) * planeHeightAtZ0;
                 
-                const targetPos = new THREE.Vector3(mappedX, mappedY, 0);
+                const targetPos = new THREE.Vector3(mappedX, mappedY, 12);
                 if (m.position.y === -1000) m.position.copy(targetPos);
                 else m.position.lerp(targetPos, 0.2); 
             }
@@ -575,6 +588,9 @@
                         if (closestOrbit.userData.targetPlanet === grabbedPlanet.def.name) {
                             grabbedPlanet.placed = true;
                             grabbedPlanet.angle = Math.atan2(grabbedPlanet.mesh.position.y, grabbedPlanet.mesh.position.x);
+                            
+                            // Animate Z back to 0 to settle into orbit
+                            gsap.to(grabbedPlanet.mesh.position, { z: 0, duration: 0.5, ease: "power2.out" });
                             
                             // Success flash
                             gsap.fromTo(closestOrbit.material, { opacity: 1 }, { opacity: 0.3, duration: 1.5, ease: "power2.out" });
@@ -644,6 +660,9 @@
             renderer.render(scene, camera);
         }
 
+        const iconMuted = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`;
+        const iconPlaying = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
+
         let audioCtx;
         let masterGainNode;
         let bgmPlaying = false;
@@ -659,14 +678,14 @@
                 masterGainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1);
                 bgmPlaying = false;
                 bgmManuallyMuted = true;
-                document.getElementById('bgm-toggle').innerText = "🔇";
+                document.getElementById('bgm-toggle').innerHTML = iconMuted;
             } else {
                 if (audioCtx.state === 'suspended') audioCtx.resume();
                 masterGainNode.gain.cancelScheduledValues(audioCtx.currentTime);
                 masterGainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 2);
                 bgmPlaying = true;
                 bgmManuallyMuted = false;
-                document.getElementById('bgm-toggle').innerText = "🔊";
+                document.getElementById('bgm-toggle').innerHTML = iconPlaying;
             }
         }
 
@@ -681,7 +700,7 @@
             if (!bgmManuallyMuted) {
                 masterGainNode.gain.linearRampToValueAtTime(0.6, audioCtx.currentTime + 4);
                 bgmPlaying = true;
-                document.getElementById('bgm-toggle').innerText = "🔊";
+                document.getElementById('bgm-toggle').innerHTML = iconPlaying;
             }
 
             masterGainNode.connect(audioCtx.destination);
