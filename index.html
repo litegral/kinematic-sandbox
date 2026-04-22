@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel="icon" href="logo.png" type="image/png">
     <title>Solary - Litegral Labs</title>
     <style>
         body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #fff; }
@@ -66,7 +66,10 @@
 </head>
 <body>
     <div id="ui-layer">
-        <h1 id="ui-title">Solar System</h1>
+        <div id="ui-header" style="display: flex; align-items: center; gap: 15px; margin-bottom: 12px;">
+            <img src="logo.png" alt="Solary Logo" style="height: 40px; filter: drop-shadow(0 2px 10px rgba(0,0,0,0.8));">
+            <h1 id="ui-title" style="margin: 0;">Solar System</h1>
+        </div>
         <div id="stats" style="display:none;"></div>
     </div>
     <div id="top-controls">
@@ -77,6 +80,7 @@
         <span id="lang-id" onclick="setLanguage('id')">ID</span>
     </div>
     <div id="onboarding-layer">
+        <img src="logo.png" alt="Solary Logo" style="height: 60px; margin-bottom: 20px;">
         <h2 id="ob-title">Loading...</h2>
         <div id="ob-content"></div>
         <div id="ob-actions"></div>
@@ -470,6 +474,7 @@
             winLayer.style.display = 'flex';
             winLayer.innerHTML = `
                 <div class="win-box">
+                    <img src="logo.png" style="height: 80px; margin-bottom: 20px;">
                     <h1>✨ ${t.statusWin} ✨</h1>
                     <p style="color: #ccc; font-size: 18px; letter-spacing: 1px; margin-bottom: 30px; font-weight: 300;">${statsText}</p>
                     <div style="display: flex; gap: 15px; justify-content: center;">
@@ -498,7 +503,7 @@
             });
         }
 
-        function shareScorecard(timeStr, acc, rawText, btnElem) {
+        async function shareScorecard(timeStr, acc, rawText, btnElem) {
             const t = i18n[currentLang];
             const originalText = btnElem.innerText;
             btnElem.innerText = "...";
@@ -523,20 +528,32 @@
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             
-            ctx.font = '300 100px "Inter", sans-serif';
-            ctx.fillText('SOLARY', 540, 280);
+            const logoImg = new Image();
+            logoImg.src = 'logo.png';
+            await new Promise(r => { logoImg.onload = r; logoImg.onerror = r; });
             
-            ctx.font = '300 45px "Inter", sans-serif';
+            if (logoImg.naturalWidth > 0) {
+                const logoHeight = 150;
+                const logoWidth = (logoImg.naturalWidth / logoImg.naturalHeight) * logoHeight;
+                ctx.drawImage(logoImg, 540 - logoWidth/2, 90, logoWidth, logoHeight);
+                ctx.font = '300 60px "Inter", sans-serif';
+                ctx.fillText('SOLARY', 540, 310);
+            } else {
+                ctx.font = '300 100px "Inter", sans-serif';
+                ctx.fillText('SOLARY', 540, 280);
+            }
+            
+            ctx.font = '300 40px "Inter", sans-serif';
             ctx.fillStyle = '#cccccc';
-            ctx.fillText(t.statusWin, 540, 360);
+            ctx.fillText(t.statusWin, 540, 380);
             
             ctx.strokeStyle = 'rgba(255,255,255,0.2)';
             ctx.lineWidth = 3;
             ctx.beginPath();
             if (ctx.roundRect) {
-                ctx.roundRect(240, 450, 600, 280, 20);
+                ctx.roundRect(240, 460, 600, 280, 20);
             } else {
-                ctx.rect(240, 450, 600, 280);
+                ctx.rect(240, 460, 600, 280);
             }
             ctx.fillStyle = 'rgba(25,25,25,0.85)';
             ctx.fill();
@@ -547,12 +564,12 @@
             const accLabel = currentLang === 'en' ? 'ACCURACY' : 'AKURASI';
             
             ctx.font = '300 40px "Inter", sans-serif';
-            ctx.fillText(`⏱️ ${timeLabel}`, 540, 540);
+            ctx.fillText(`⏱️ ${timeLabel}`, 540, 550);
             ctx.font = '600 65px "Inter", sans-serif';
-            ctx.fillText(timeStr, 540, 610);
+            ctx.fillText(timeStr, 540, 620);
             
             ctx.font = '300 40px "Inter", sans-serif';
-            ctx.fillText(`🎯 ${accLabel}: ${acc}%`, 540, 680);
+            ctx.fillText(`🎯 ${accLabel}: ${acc}%`, 540, 690);
 
             ctx.fillStyle = '#888888';
             ctx.font = '400 35px "Inter", sans-serif';
@@ -890,7 +907,7 @@
             initThreeJS();
             
             // HUD Entrance Animations
-            gsap.from('#ui-title', { y: -30, opacity: 0, duration: 1, ease: "power3.out" });
+            gsap.from('#ui-header', { y: -30, opacity: 0, duration: 1, ease: "power3.out" });
             gsap.from('#top-controls', { y: -30, opacity: 0, duration: 1, ease: "power3.out", delay: 0.2 });
             gsap.from('#onboarding-layer', { scale: 0.9, opacity: 0, duration: 1, ease: "back.out(1.2)", delay: 0.4 });
         });
