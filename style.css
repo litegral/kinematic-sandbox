@@ -1,0 +1,500 @@
+:root {
+  --bg: #000;
+  --panel: rgba(15, 15, 15, 0.88);
+  --panel-soft: rgba(0, 0, 0, 0.5);
+  --text: #fff;
+  --muted: #ccc;
+  --border: rgba(255, 255, 255, 0.12);
+  --danger: #ff6666;
+  --success: #aef7d3;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+#canvas-container {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+}
+
+#webcam-video {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: 5;
+  transform: scaleX(-1);
+  filter: grayscale(80%) brightness(0.3) contrast(1.3);
+}
+
+#ui-layer {
+  position: absolute;
+  top: 40px;
+  left: 40px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+#ui-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 12px;
+  height: 40px;
+}
+
+#ui-logo {
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.8));
+}
+
+#ui-title {
+  margin: 0;
+  line-height: 40px;
+  transform: translateY(-4px);
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+#stats {
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  color: #fff;
+  background: var(--panel-soft);
+  padding: 10px 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+#top-controls {
+  position: absolute;
+  top: 40px;
+  right: 40px;
+  z-index: 100;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: #aaa;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#top-controls span {
+  transition: color 0.3s;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+}
+
+#top-controls span:not(.divider) {
+  cursor: pointer;
+}
+
+#top-controls span:hover {
+  color: #fff;
+}
+
+#top-controls .divider {
+  cursor: default;
+  color: #666;
+}
+
+#top-controls .active {
+  color: #fff;
+  font-weight: 600;
+}
+
+#credit {
+  position: absolute;
+  bottom: 30px;
+  right: 40px;
+  z-index: 100;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #888;
+}
+
+#credit a {
+  color: #ccc;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+#credit a:hover {
+  color: #fff;
+}
+
+#onboarding-layer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+  background: rgba(15, 15, 15, 0.85);
+  padding: 50px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9);
+  width: 85%;
+  max-width: 560px;
+  backdrop-filter: blur(15px);
+}
+
+#onboarding-layer h2 {
+  margin: 0 0 25px 0;
+  font-weight: 300;
+  font-size: 32px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+#ob-content p {
+  color: #ddd;
+  line-height: 1.8;
+  font-size: 18px;
+  margin-bottom: 20px;
+  font-weight: 300;
+}
+
+#ob-content strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.ob-btn {
+  background-color: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 12px 24px;
+  font-size: 15px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: all 0.3s;
+  margin: 10px;
+  font-family: inherit;
+  text-transform: uppercase;
+}
+
+.ob-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: #fff;
+}
+
+.success-text {
+  color: var(--success) !important;
+}
+.error-text {
+  color: var(--danger) !important;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  opacity: 0;
+}
+
+.win-box,
+.fact-box {
+  background: rgba(15, 15, 15, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 100px rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.win-box {
+  padding: 50px;
+  border-radius: 16px;
+  text-align: center;
+  pointer-events: auto;
+  max-width: 760px;
+}
+
+.win-box h1 {
+  font-size: 28px;
+  margin: 0 0 24px 0;
+  color: #fff;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.win-box p {
+  color: #ccc;
+  font-size: 18px;
+  line-height: 1.7;
+  margin-bottom: 30px;
+  font-weight: 300;
+}
+
+.fact-box {
+  width: min(900px, 92vw);
+  border-radius: 18px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  pointer-events: auto;
+}
+
+.fact-image-wrap {
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.08),
+    rgba(0, 0, 0, 0.25)
+  );
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px;
+  overflow: visible;
+}
+
+#fact-image {
+  width: auto;
+  max-width: 320px;
+  max-height: 480px;
+  object-fit: contain;
+}
+
+.fact-copy {
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.fact-kicker {
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+#fact-title {
+  margin: 0 0 12px 0;
+  font-size: 30px;
+  font-weight: 300;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+#fact-text {
+  margin: 0 0 24px 0;
+  color: #ddd;
+  font-size: 18px;
+  line-height: 1.8;
+  font-weight: 300;
+}
+
+@media (max-width: 768px) {
+  #ui-layer {
+    top: 20px;
+    left: 20px;
+  }
+
+  #top-controls {
+    top: 20px;
+    right: 20px;
+  }
+
+  #credit {
+    right: 20px;
+    bottom: 18px;
+  }
+
+  #onboarding-layer {
+    padding: 28px;
+    width: calc(100vw - 32px);
+  }
+
+  #onboarding-layer h2 {
+    font-size: 24px;
+  }
+
+  #ob-content p {
+    font-size: 16px;
+  }
+
+  .fact-box {
+    grid-template-columns: 1fr;
+  }
+
+  .fact-image-wrap {
+    padding: 18px;
+  }
+
+  #fact-image {
+    max-width: 180px;
+  }
+
+  .fact-copy {
+    padding: 24px;
+  }
+
+  #fact-title {
+    font-size: 24px;
+  }
+
+  #fact-text {
+    font-size: 16px;
+  }
+}
+
+.planet-card-sprite {
+  width: 240px;
+  aspect-ratio: 1 / 1.45;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+
+  background-image: url('illustrations/planet-cards.png');
+  background-size: 400% 200%;
+  background-repeat: no-repeat;
+  background-color: #111;
+}
+
+.planet-card-sprite.mercury {
+  background-position: 0% 0%;
+}
+.planet-card-sprite.venus {
+  background-position: 33.333% 0%;
+}
+.planet-card-sprite.earth {
+  background-position: 66.666% 0%;
+}
+.planet-card-sprite.mars {
+  background-position: 100% 0%;
+}
+
+.planet-card-sprite.jupiter {
+  background-position: 0% 100%;
+}
+.planet-card-sprite.saturn {
+  background-position: 33.333% 100%;
+}
+.planet-card-sprite.uranus {
+  background-position: 66.666% 100%;
+}
+.planet-card-sprite.neptune {
+  background-position: 100% 100%;
+}
+
+.card-reveal-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 900px;
+}
+
+#fact-image {
+  width: auto;
+  max-width: 320px;
+  max-height: 480px;
+  object-fit: contain;
+  transform-style: preserve-3d;
+  will-change: transform, filter, opacity;
+}
+
+.card-burst {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.25) 18%, transparent 58%),
+    conic-gradient(
+      from 0deg,
+      transparent,
+      rgba(255,255,255,0.7),
+      transparent,
+      rgba(255,255,255,0.45),
+      transparent
+    );
+  opacity: 0;
+  transform: scale(0.2) rotate(0deg);
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.fact-box.revealing #fact-image {
+  animation: gachaCardReveal 1.05s cubic-bezier(.17,.84,.44,1) both;
+}
+
+.fact-box.revealing .card-burst {
+  animation: gachaBurst 0.9s ease-out both;
+}
+
+@keyframes gachaCardReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.25) rotateY(720deg) rotateZ(-16deg);
+    filter: brightness(3) blur(8px);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scale(1.18) rotateY(120deg) rotateZ(6deg);
+    filter: brightness(2.4) blur(1px);
+  }
+
+  70% {
+    transform: scale(0.96) rotateY(-18deg) rotateZ(-2deg);
+    filter: brightness(1.35) blur(0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) rotateY(0deg) rotateZ(0deg);
+    filter: brightness(1) blur(0);
+  }
+}
+
+@keyframes gachaBurst {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(0deg);
+  }
+
+  30% {
+    opacity: 0.9;
+    transform: scale(1.15) rotate(120deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.9) rotate(280deg);
+  }
+}
