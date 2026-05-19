@@ -14,6 +14,8 @@ import {
 } from './js/ui.js';
 import { createGameWorld } from './js/game-world.js';
 import { createHandTracking, detectGesture } from './js/hand-tracking.js';
+import { handleLevel1Interaction } from './js/levels/level1.js';
+import { handleLevel2Interaction } from './js/levels/level2.js';
 
 let gameWorld;
 let handTracking;
@@ -100,182 +102,6 @@ function handleOnboarding(currentGesture) {
   return !state.onboardingComplete;
 }
 
-function handleMoonInteraction(currentGesture, handWorldPos) {
-  const { moons, planets, world } = gameWorld.world;
-  const t = getT();
-
-  if (currentGesture === 'Pinch') {
-    if (!state.grabbedMoon) {
-      let nearest = null;
-      let minDist = 42;
-      for (const moon of moons) {
-        if (moon.placed) continue;
-        const dist = moon.mesh.position.distanceTo(handWorldPos);
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = moon;
-        }
-      }
-      if (nearest) state.grabbedMoon = nearest;
-    }
-  } else if (currentGesture === 'Open' && state.grabbedMoon) {
-    let closestPlanet = null;
-    let closestDist = Infinity;
-
-    for (const planet of planets) {
-      if (!planet.placed) continue;
-      const dist = state.grabbedMoon.mesh.position.distanceTo(planet.mesh.position);
-      const grabRadius = Math.max(12, planet.def.radius + 9);
-      if (dist < grabRadius && dist < closestDist) {
-        closestDist = dist;
-        closestPlanet = planet;
-      }
-    }
-
-    if (closestPlanet) {
-      state.totalDrops++;
-      const moonName = state.grabbedMoon.def.name;
-      const planetName = t.planetNames[closestPlanet.def.name];
-
-      if (state.grabbedMoon.def.parent === closestPlanet.def.name) {
-        playSuccessSFX();
-        state.grabbedMoon.placed = true;
-        state.grabbedMoon.parentPlanet = closestPlanet;
-        state.grabbedMoon.orbitRadius = closestPlanet.def.radius + 5 + Math.random() * 3;
-        state.grabbedMoon.angle = Math.atan2(
-          state.grabbedMoon.mesh.position.y - closestPlanet.mesh.position.y,
-          state.grabbedMoon.mesh.position.x - closestPlanet.mesh.position.x
-        );
-
-        updateStats(t.statusMoonCorrect.replace('{moon}', moonName).replace('{planet}', planetName), 'success-text');
-        gsap.fromTo(state.grabbedMoon.mesh.scale, { x: 1.6, y: 1.6, z: 1.6 }, { x: 1, y: 1, z: 1, duration: 0.45, ease: 'back.out(2)' });
-
-        if (moons.every(moon => moon.placed)) {
-          track('Level 2 Completed');
-          setTimeout(() => triggerWinState(world.scene, world.camera), 600);
-        }
-      } else {
-        state.mistakeCount++;
-        playErrorSFX();
-        updateStats(t.statusMoonWrong.replace('{moon}', moonName).replace('{planet}', planetName), 'error-text');
-        const wrongMoon = state.grabbedMoon;
-        gsap.to(wrongMoon.mesh.position, {
-          x: '+=3',
-          duration: 0.05,
-          yoyo: true,
-          repeat: 5,
-          onComplete: () => returnMoonToSpawn(wrongMoon)
-        });
-      }
-    } else {
-      updateStats(t.statusMoonDrag, '');
-      returnMoonToSpawn(state.grabbedMoon);
-    }
-
-    state.grabbedMoon = null;
-  }
-
-  if (state.grabbedMoon) {
-    gsap.killTweensOf(state.grabbedMoon.mesh.position);
-    gsap.killTweensOf(state.grabbedMoon.label.position);
-    state.grabbedMoon.mesh.position.lerp(handWorldPos, 0.4);
-    state.grabbedMoon.mesh.position.z = 14;
-    state.grabbedMoon.label.position.lerp(new THREE.Vector3(handWorldPos.x, handWorldPos.y + 6, 16), 0.4);
-  }
-}
-
-function handlePlanetInteraction(currentGesture, handWorldPos) {
-  const { planets, orbits } = gameWorld.world;
-  const t = getT();
-
-  if (currentGesture === 'Pinch') {
-    if (!state.grabbedPlanet) {
-      let nearest = null;
-      let minDist = 50;
-      for (const planet of planets) {
-        if (planet.placed) continue;
-        const dist = planet.mesh.position.distanceTo(handWorldPos);
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = planet;
-        }
-      }
-      if (nearest) state.grabbedPlanet = nearest;
-    }
-  } else if (currentGesture === 'Open' && state.grabbedPlanet) {
-    const distToCenter = state.grabbedPlanet.mesh.position.length();
-    let closestOrbit = null;
-    let minOrbitDist = 8;
-
-    for (const orbit of orbits) {
-      const distanceToOrbit = Math.abs(distToCenter - orbit.userData.dist);
-      if (distanceToOrbit < minOrbitDist) {
-        minOrbitDist = distanceToOrbit;
-        closestOrbit = orbit;
-      }
-    }
-
-    if (closestOrbit) {
-      state.totalDrops++;
-      const targetName = t.planetNames[closestOrbit.userData.targetPlanet];
-      const planetName = t.planetNames[state.grabbedPlanet.def.name];
-
-      if (closestOrbit.userData.targetPlanet === state.grabbedPlanet.def.name) {
-        playSuccessSFX();
-        state.grabbedPlanet.placed = true;
-        state.grabbedPlanet.angle = Math.atan2(state.grabbedPlanet.mesh.position.y, state.grabbedPlanet.mesh.position.x);
-        gsap.to(state.grabbedPlanet.mesh.position, { z: 0, duration: 0.5, ease: 'power2.out' });
-        gsap.fromTo(closestOrbit.material, { opacity: 1 }, { opacity: 0.3, duration: 1.2, ease: 'power2.out' });
-        closestOrbit.material.color.setHex(0xffffff);
-        updateStats(t.statusCorrect.replace('{planet}', planetName), 'success-text');
-
-        const placedPlanet = state.grabbedPlanet;
-        state.grabbedPlanet = null;
-        showPlanetFact(placedPlanet.def.name, () => {
-          if (planets.every(planet => planet.placed)) {
-            track('Level 1 Completed');
-            setTimeout(() => showLevelComplete(1), 350);
-          } else {
-            updateStats(t.statusDrag, '');
-          }
-        });
-        return;
-      }
-
-      state.mistakeCount++;
-      playErrorSFX();
-      updateStats(t.statusWrong.replace('{target}', targetName).replace('{planet}', planetName), 'error-text');
-      const wrongPlanet = state.grabbedPlanet;
-      const originalColor = closestOrbit.material.color.getHex();
-      closestOrbit.material.color.setHex(0xff4444);
-      gsap.fromTo(closestOrbit.material, { opacity: 0.8 }, {
-        opacity: 0.3,
-        duration: 0.15,
-        yoyo: true,
-        repeat: 3,
-        onComplete: () => closestOrbit.material.color.setHex(originalColor)
-      });
-      gsap.to(wrongPlanet.mesh.position, {
-        x: '+=3',
-        duration: 0.05,
-        yoyo: true,
-        repeat: 5,
-        onComplete: () => returnPlanetToSpawn(wrongPlanet)
-      });
-    } else {
-      returnPlanetToSpawn(state.grabbedPlanet);
-      updateStats(t.statusDrag, '');
-    }
-
-    state.grabbedPlanet = null;
-  }
-
-  if (state.grabbedPlanet) {
-    gsap.killTweensOf(state.grabbedPlanet.mesh.position);
-    state.grabbedPlanet.mesh.position.lerp(handWorldPos, 0.4);
-  }
-}
-
 function startLevel2() {
   track('Level 2 Started');
   state.currentLevel = 2;
@@ -316,11 +142,40 @@ function handleInteraction() {
   if (handleOnboarding(currentGesture)) return;
 
   if (state.currentLevel === 2) {
-    handleMoonInteraction(currentGesture, handWorldPos);
+    handleLevel2Interaction({
+      currentGesture,
+      handWorldPos,
+      moons: gameWorld.world.moons,
+      planets: gameWorld.world.planets,
+      scene: gameWorld.world.scene,
+      camera: gameWorld.world.camera,
+      state,
+      getT,
+      updateStats,
+      playSuccessSFX,
+      playErrorSFX,
+      triggerWinState,
+      track,
+      returnMoonToSpawn
+    });
     return;
   }
 
-  handlePlanetInteraction(currentGesture, handWorldPos);
+  handleLevel1Interaction({
+    currentGesture,
+    handWorldPos,
+    planets: gameWorld.world.planets,
+    orbits: gameWorld.world.orbits,
+    state,
+    getT,
+    updateStats,
+    playSuccessSFX,
+    playErrorSFX,
+    showPlanetFact,
+    showLevelComplete,
+    track,
+    returnPlanetToSpawn
+  });
 }
 
 function animate() {
