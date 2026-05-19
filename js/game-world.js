@@ -12,6 +12,7 @@ export function createGameWorld(container) {
     planets: [],
     orbits: [],
     moons: [],
+    level2Guides: [],
     level3Zones: [],
     spaceObjects: [],
     level4Buckets: [],
@@ -160,6 +161,16 @@ export function createGameWorld(container) {
       if (moon.label) world.scene.remove(moon.label);
     });
     world.moons.length = 0;
+
+    world.level2Guides.forEach(guide => {
+      if (guide.ring) world.scene.remove(guide.ring);
+      if (guide.label) world.scene.remove(guide.label);
+      if (guide.planet) {
+        guide.planet.level2GuideRing = null;
+        guide.planet.level2GuideLabel = null;
+      }
+    });
+    world.level2Guides.length = 0;
   }
 
   function clearLevel3Objects() {
@@ -251,12 +262,49 @@ export function createGameWorld(container) {
     });
   }
 
-  function createLevel2Moons() {
+  function createLevel2Moons(uiText = {}) {
     clearLevel2Moons();
     clearLevel3Objects();
     clearLevel4Classification();
     clearLevel5Question();
     setSpaceBackdropVisible(true);
+
+    const moonParentSet = new Set(moonDefs.map(def => def.parent));
+    for (const planet of world.planets) {
+      if (!planet.placed) continue;
+
+      if (moonParentSet.has(planet.def.name)) {
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(planet.def.radius + 10, planet.def.radius + 12.8, 48),
+          new THREE.MeshBasicMaterial({
+            color: 0x8bb8ff,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.3,
+            depthWrite: false
+          })
+        );
+        ring.position.set(planet.mesh.position.x, planet.mesh.position.y, planet.mesh.position.z - 1.5);
+        world.scene.add(ring);
+        planet.level2GuideRing = ring;
+        world.level2Guides.push({ planet, ring });
+      } else {
+        const label = createTextSprite(uiText.noMoons || 'No moons', {
+          fontSize: 18,
+          scale: 0.082,
+          background: 'rgba(15, 23, 42, 0.85)',
+          border: 'rgba(255,255,255,0.14)',
+          color: '#cbd5e1',
+          paddingX: 20,
+          paddingY: 12
+        });
+        label.position.set(planet.mesh.position.x, planet.mesh.position.y + planet.def.radius + 10, 8);
+        label.userData.baseScale = label.scale.clone();
+        world.scene.add(label);
+        planet.level2GuideLabel = label;
+        world.level2Guides.push({ planet, label });
+      }
+    }
 
     moonDefs.forEach((def, index) => {
       const moonMesh = new THREE.Mesh(
@@ -335,7 +383,7 @@ export function createGameWorld(container) {
 
       const side = index % 2 === 0 ? -1 : 1;
       const row = Math.floor(index / 2);
-      const spawnX = side * 214;
+      const spawnX = side * 184;
       const spawnY = 62 - row * 34;
       mesh.position.set(spawnX, spawnY, 8);
 
@@ -382,13 +430,13 @@ export function createGameWorld(container) {
       bucket.userData = { ...def, fillCount: 0 };
 
       const label = createTextSprite(def.label, {
-        fontSize: 34,
-        scale: 0.1,
+        fontSize: 40,
+        scale: 0.11,
         background: 'rgba(8, 12, 22, 0.84)',
         border: 'rgba(255,255,255,0.24)',
         color: '#f5f7ff'
       });
-      label.position.set(def.x, def.y + def.height / 2 + 8, 2);
+      label.position.set(def.x, def.y + def.height / 2 + 10, 2);
       bucket.userData.label = label;
 
       world.scene.add(bucket);
@@ -404,15 +452,15 @@ export function createGameWorld(container) {
 
       const side = index % 2 === 0 ? -1 : 1;
       const row = Math.floor(index / 2);
-      const spawnX = side * 222;
+      const spawnX = side * 188;
       const spawnY = 96 - row * 34;
       mesh.position.set(spawnX, spawnY, 8);
 
       const artSprite = createSpaceObjectArtSprite(def);
       artSprite.position.set(spawnX, spawnY + 10, 7);
 
-      const label = createTextSprite(def.name, { fontSize: 32, scale: 0.09 });
-      label.position.set(spawnX, spawnY - 4.5, 10);
+      const label = createTextSprite(def.name, { fontSize: 36, scale: 0.1 });
+      label.position.set(spawnX, spawnY - 5.5, 10);
 
       world.scene.add(mesh);
       world.scene.add(artSprite);
@@ -648,6 +696,16 @@ export function createGameWorld(container) {
         planet.mesh.position.y = Math.sin(planet.angle) * planet.def.dist;
       } else if (!planet.placed && planet !== grabbedPlanet) {
         planet.mesh.position.y += Math.sin(Date.now() * 0.002 + planet.def.dist) * 0.05;
+      }
+
+      if (planet.level2GuideRing) {
+        planet.level2GuideRing.position.x = planet.mesh.position.x;
+        planet.level2GuideRing.position.y = planet.mesh.position.y;
+        planet.level2GuideRing.rotation.z += 0.003;
+      }
+      if (planet.level2GuideLabel) {
+        planet.level2GuideLabel.position.x = planet.mesh.position.x;
+        planet.level2GuideLabel.position.y = planet.mesh.position.y + planet.def.radius + 10;
       }
     }
 

@@ -11,6 +11,7 @@ export const i18n = {
     level1Fact: 'The planets are arranged by their average distance from the Sun, from Mercury to Neptune.',
     level2Title: 'Level 2 — Match the Moons',
     level2Btn: 'Start Level 2',
+    level2NoMoons: 'No moons',
     statusMoonDrag: 'Drag each moon to its parent planet.',
     statusMoonCorrect: 'Great job! {moon} belongs to {planet}.',
     statusMoonWrong: 'Oops! {moon} does not belong to {planet}.',
@@ -89,6 +90,7 @@ export const i18n = {
     level1Fact: 'Planet disusun berdasarkan jarak rata-ratanya dari Matahari, dari Merkurius hingga Neptunus.',
     level2Title: 'Level 2 — Cocokkan Bulan',
     level2Btn: 'Mulai Level 2',
+    level2NoMoons: 'Tidak punya bulan',
     statusMoonDrag: 'Tarik setiap bulan ke planet induknya.',
     statusMoonCorrect: 'Bagus! {moon} adalah bulan milik {planet}.',
     statusMoonWrong: 'Ups! {moon} bukan milik {planet}.',
@@ -194,25 +196,25 @@ export const level3ZoneDefs = [
 ];
 
 export const level4CategoryDefs = [
-  { key: 'terrestrial', label: 'Terrestrial Planets', x: -82, y: 56, width: 84, height: 42, color: 0xffb74d },
-  { key: 'gas', label: 'Gas Giants', x: 82, y: 56, width: 84, height: 42, color: 0xff8a65 },
-  { key: 'ice', label: 'Ice Giants', x: -82, y: -40, width: 84, height: 42, color: 0x4fc3f7 },
-  { key: 'dwarf', label: 'Dwarf Planets', x: 82, y: -40, width: 84, height: 42, color: 0xce93d8 }
+  { key: 'terrestrial', label: 'Terrestrial Planets', x: -88, y: 58, width: 108, height: 54, color: 0xffb74d },
+  { key: 'gas', label: 'Gas Giants', x: 88, y: 58, width: 108, height: 54, color: 0xff8a65 },
+  { key: 'ice', label: 'Ice Giants', x: -88, y: -42, width: 108, height: 54, color: 0x4fc3f7 },
+  { key: 'dwarf', label: 'Dwarf Planets', x: 88, y: -42, width: 108, height: 54, color: 0xce93d8 }
 ];
 
 export const level4ItemDefs = [
-  { name: 'Mercury', category: 'terrestrial', color: 0xb0bec5, size: 2.3, speed: 0.004, art: { symbol: '☿', illustration: '', accent: '#b0bec5' } },
-  { name: 'Venus', category: 'terrestrial', color: 0xd7b98e, size: 2.7, speed: 0.0038, art: { symbol: '♀', illustration: '', accent: '#d7b98e' } },
-  { name: 'Earth', category: 'terrestrial', color: 0x81d4fa, size: 2.8, speed: 0.0038, art: { symbol: '🌍', illustration: '', accent: '#81d4fa' } },
-  { name: 'Mars', category: 'terrestrial', color: 0xff8a65, size: 2.5, speed: 0.004, art: { symbol: '♂', illustration: '', accent: '#ff8a65' } },
-  { name: 'Jupiter', category: 'gas', color: 0xffcc80, size: 3.6, speed: 0.0032, art: { symbol: '♃', illustration: '', accent: '#ffcc80' } },
-  { name: 'Saturn', category: 'gas', color: 0xffe082, size: 3.3, speed: 0.0032, art: { symbol: '🪐', illustration: '', accent: '#ffe082' } },
-  { name: 'Uranus', category: 'ice', color: 0x80deea, size: 3.0, speed: 0.0032, art: { symbol: '⛢', illustration: '', accent: '#80deea' } },
-  { name: 'Neptune', category: 'ice', color: 0x64b5f6, size: 3.0, speed: 0.0032, art: { symbol: '♆', illustration: '', accent: '#64b5f6' } },
-  { name: 'Pluto', category: 'dwarf', color: 0xd7ccc8, size: 2.4, speed: 0.0035, art: { symbol: '❄️', illustration: '', accent: '#d7ccc8' } },
-  { name: 'Eris', category: 'dwarf', color: 0xe0e0e0, size: 2.4, speed: 0.0035, art: { symbol: '✦', illustration: '', accent: '#e0e0e0' } },
-  { name: 'Ceres', category: 'dwarf', color: 0xcfd8dc, size: 2.4, speed: 0.0035, art: { symbol: '🪨', illustration: '', accent: '#cfd8dc' } },
-  { name: 'Makemake', category: 'dwarf', color: 0xffccbc, size: 2.4, speed: 0.0035, art: { symbol: '❄️', illustration: '', accent: '#ffccbc' } }
+  { name: 'Mercury', category: 'terrestrial', color: 0xb0bec5, size: 2.8, speed: 0.004, art: { symbol: '☿', illustration: '', accent: '#b0bec5' } },
+  { name: 'Venus', category: 'terrestrial', color: 0xd7b98e, size: 3.2, speed: 0.0038, art: { symbol: '♀', illustration: '', accent: '#d7b98e' } },
+  { name: 'Earth', category: 'terrestrial', color: 0x81d4fa, size: 3.3, speed: 0.0038, art: { symbol: '🌍', illustration: '', accent: '#81d4fa' } },
+  { name: 'Mars', category: 'terrestrial', color: 0xff8a65, size: 3.0, speed: 0.004, art: { symbol: '♂', illustration: '', accent: '#ff8a65' } },
+  { name: 'Jupiter', category: 'gas', color: 0xffcc80, size: 4.2, speed: 0.0032, art: { symbol: '♃', illustration: '', accent: '#ffcc80' } },
+  { name: 'Saturn', category: 'gas', color: 0xffe082, size: 3.9, speed: 0.0032, art: { symbol: '🪐', illustration: '', accent: '#ffe082' } },
+  { name: 'Uranus', category: 'ice', color: 0x80deea, size: 3.5, speed: 0.0032, art: { symbol: '⛢', illustration: '', accent: '#80deea' } },
+  { name: 'Neptune', category: 'ice', color: 0x64b5f6, size: 3.5, speed: 0.0032, art: { symbol: '♆', illustration: '', accent: '#64b5f6' } },
+  { name: 'Pluto', category: 'dwarf', color: 0xd7ccc8, size: 2.9, speed: 0.0035, art: { symbol: '❄️', illustration: '', accent: '#d7ccc8' } },
+  { name: 'Eris', category: 'dwarf', color: 0xe0e0e0, size: 2.9, speed: 0.0035, art: { symbol: '✦', illustration: '', accent: '#e0e0e0' } },
+  { name: 'Ceres', category: 'dwarf', color: 0xcfd8dc, size: 2.9, speed: 0.0035, art: { symbol: '🪨', illustration: '', accent: '#cfd8dc' } },
+  { name: 'Makemake', category: 'dwarf', color: 0xffccbc, size: 2.9, speed: 0.0035, art: { symbol: '❄️', illustration: '', accent: '#ffccbc' } }
 ];
 
 export const level5ScenarioDefs = [

@@ -213,7 +213,7 @@ function startLevel2() {
     onComplete: () => {
       dom.winLayer.style.display = 'none';
       dom.winLayer.innerHTML = '';
-      gameWorld.createLevel2Moons();
+      gameWorld.createLevel2Moons({ noMoons: getT().level2NoMoons });
       setPresentationForLevel(2);
       setCameraForLevel(2);
       updateStats(getT().statusMoonDrag, '');
@@ -487,7 +487,7 @@ function setupDebugConsole() {
 
       if (level === 2) {
         state.currentLevel = 2;
-        gameWorld.createLevel2Moons();
+        gameWorld.createLevel2Moons({ noMoons: getT().level2NoMoons });
         setPresentationForLevel(2);
         setCameraForLevel(2);
         updateStats(getT().statusMoonDrag, '');
