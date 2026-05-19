@@ -1,5 +1,5 @@
 import { dom } from './dom.js';
-import { planetFacts } from './data.js';
+import { getLevel5ScenarioFact, getLevel5ScenarioOptions, planetFacts } from './data.js';
 import { state, getT } from './state.js';
 import { playGachaRevealSFX, playSuccessSFX } from './audio.js';
 
@@ -7,7 +7,10 @@ const actions = {
   onContinueFromMobile: () => {},
   onChooseLanguage: () => {},
   onStartScanner: () => {},
-  onStartLevel2: () => {}
+  onStartLevel2: () => {},
+  onStartLevel3: () => {},
+  onStartLevel4: () => {},
+  onStartLevel5: () => {}
 };
 
 function track(event, payload = {}) {
@@ -17,6 +20,13 @@ function track(event, payload = {}) {
 function clearChildren(element) {
   element.innerHTML = '';
 }
+
+const level5GestureDefs = [
+  { gesture: 'Peace', symbol: '✌️' },
+  { gesture: 'ThumbsUp', symbol: '👍' },
+  { gesture: 'Metal', symbol: '🤘' },
+  { gesture: 'Vulcan', symbol: '🖖' }
+];
 
 function createButton(label, onClick, extraClass = '') {
   const button = document.createElement('button');
@@ -58,6 +68,47 @@ export function updateFactButtonText() {
   dom.factText.innerText = fact[state.currentLang];
 }
 
+export function setLevel5HUDVisible(visible) {
+  if (!dom.level5Hud) return;
+  dom.level5Hud.style.display = visible ? 'block' : 'none';
+}
+
+export function renderLevel5HUD(scenario) {
+  if (!dom.level5Hud || !scenario) return;
+
+  const t = getT();
+  dom.level5Kicker.innerText = t.level5Title;
+  dom.level5Planet.innerText = t.planetNames[scenario.planet] || scenario.planet;
+  if (dom.level5Badge) dom.level5Badge.innerText = t.level5Badge;
+  dom.level5Question.innerText = t.level5Question;
+  dom.level5Footnote.innerText = t.level5Hint;
+  clearChildren(dom.level5Answers);
+
+  const options = getLevel5ScenarioOptions(scenario, state.currentLang);
+
+  for (const def of level5GestureDefs) {
+    const card = document.createElement('div');
+    card.className = 'level5-answer';
+    card.dataset.gesture = def.gesture;
+    card.innerHTML = `
+      <div class="level5-answer-gesture">${def.symbol}</div>
+      <div class="level5-answer-copy">${options[def.gesture]}</div>
+    `;
+    dom.level5Answers.appendChild(card);
+  }
+
+  setLevel5HUDVisible(true);
+}
+
+export function setLevel5HUDAnswerState(selectedGesture, result = 'active') {
+  if (!dom.level5Answers) return;
+
+  for (const card of dom.level5Answers.children) {
+    card.classList.remove('active', 'correct', 'wrong');
+    if (card.dataset.gesture === selectedGesture) card.classList.add(result);
+  }
+}
+
 function renderOnboardingActions() {
   const t = getT();
   clearChildren(dom.obActions);
@@ -82,6 +133,7 @@ export function updateUIText() {
   const t = getT();
   updateLanguageControls();
   dom.uiTitle.innerText = t.title;
+  if (state.currentLevel === 5 && state.activeLevel5Scenario) renderLevel5HUD(state.activeLevel5Scenario);
 
   const renderContent = () => {
     if (state.obState === 'mobileWarning') {
@@ -209,23 +261,27 @@ export function showLevelComplete(levelNumber) {
   state.interactionLocked = true;
 
   const t = getT();
-  const title = levelNumber === 1 ? t.level1CompleteTitle : t.statusMoonWin;
-  const fact = levelNumber === 1 ? t.level1Fact : t.level2Fact;
-  const buttonLabel = levelNumber === 1 ? t.level2Btn : t.btnRestart;
+  const config = {
+    1: { title: t.level1CompleteTitle, fact: t.level1Fact, buttonLabel: t.level2Btn, onClick: actions.onStartLevel2 },
+    2: { title: t.statusMoonWin, fact: t.level2Fact, buttonLabel: t.level3Btn, onClick: actions.onStartLevel3 },
+    3: { title: t.statusLevel3Win, fact: t.level3Fact, buttonLabel: t.level4Btn, onClick: actions.onStartLevel4 },
+    4: { title: t.statusLevel4Win, fact: t.level4Fact, buttonLabel: t.level5Btn, onClick: actions.onStartLevel5 },
+    5: { title: t.statusLevel5Win, fact: getLevel5ScenarioFact(state.activeLevel5Scenario, state.currentLang) || t.level4Fact, buttonLabel: t.btnRestart, onClick: () => location.reload() }
+  }[levelNumber];
 
+  setLevel5HUDVisible(false);
   dom.winLayer.style.display = 'flex';
   dom.winLayer.style.opacity = '0';
   dom.winLayer.innerHTML = `
     <div class="win-box">
       <img src="logo.png" alt="Solary Logo" style="height:80px; margin-bottom:20px;" />
-      <h1>${title}</h1>
-      <p>${fact}</p>
-      <button class="ob-btn" id="level-complete-btn">${buttonLabel}</button>
+      <h1>${config.title}</h1>
+      <p>${config.fact}</p>
+      <button class="ob-btn" id="level-complete-btn">${config.buttonLabel}</button>
     </div>
   `;
 
-  const actionButton = dom.winLayer.querySelector('#level-complete-btn');
-  actionButton.addEventListener('click', levelNumber === 1 ? actions.onStartLevel2 : () => location.reload());
+  dom.winLayer.querySelector('#level-complete-btn').addEventListener('click', config.onClick);
 
   gsap.to(dom.winLayer, { opacity: 1, duration: 0.5 });
   gsap.fromTo('.win-box', { scale: 0.8, y: 30 }, { scale: 1, y: 0, duration: 0.7, ease: 'back.out(1.2)' });
@@ -342,7 +398,13 @@ export function triggerWinState(scene, camera) {
   const acc = state.totalDrops > 0 ? Math.max(0, Math.round(((state.totalDrops - state.mistakeCount) / state.totalDrops) * 100)) : 100;
   const statsText = t.winStats.replace('{time}', timeStr).replace('{acc}', acc);
   const shareTextRaw = t.shareText.replace('{time}', timeStr).replace('{acc}', acc);
+  const finalFact = state.currentLevel >= 5
+    ? (getLevel5ScenarioFact(state.activeLevel5Scenario, state.currentLang) || t.level4Fact)
+    : state.currentLevel >= 4
+      ? t.level4Fact
+      : t.level3Fact;
 
+  setLevel5HUDVisible(false);
   dom.winLayer.style.display = 'flex';
   dom.winLayer.style.opacity = '0';
   dom.winLayer.innerHTML = `
@@ -350,6 +412,7 @@ export function triggerWinState(scene, camera) {
       <img src="logo.png" alt="Solary Logo" style="height:80px; margin-bottom:20px;" />
       <h1>✨ ${t.statusWin} ✨</h1>
       <p>${statsText}</p>
+      <p style="max-width:560px; margin: 0 auto 30px;">${finalFact}</p>
       <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
         <button class="ob-btn" id="restart-btn">${t.btnRestart}</button>
         <button class="ob-btn" id="share-btn" style="background: rgba(255,255,255,0.08);">${t.btnShare}</button>

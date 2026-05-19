@@ -10,7 +10,7 @@ export function handleLevel2Interaction({
   updateStats,
   playSuccessSFX,
   playErrorSFX,
-  triggerWinState,
+  showLevelComplete,
   track,
   returnMoonToSpawn
 }) {
@@ -64,7 +64,7 @@ export function handleLevel2Interaction({
 
         if (moons.every(moon => moon.placed)) {
           track('Level 2 Completed');
-          setTimeout(() => triggerWinState(scene, camera), 600);
+          setTimeout(() => showLevelComplete(2), 600);
         }
       } else {
         state.mistakeCount++;

@@ -4,6 +4,13 @@ export function cacheDom() {
   dom.uiLayer = document.getElementById('ui-layer');
   dom.uiTitle = document.getElementById('ui-title');
   dom.stats = document.getElementById('stats');
+  dom.level5Hud = document.getElementById('level5-hud');
+  dom.level5Kicker = document.getElementById('level5-kicker');
+  dom.level5Planet = document.getElementById('level5-planet');
+  dom.level5Badge = document.getElementById('level5-badge');
+  dom.level5Question = document.getElementById('level5-question');
+  dom.level5Answers = document.getElementById('level5-answers');
+  dom.level5Footnote = document.getElementById('level5-footnote');
   dom.topControls = document.getElementById('top-controls');
   dom.bgmToggle = document.getElementById('bgm-toggle');
   dom.langEn = document.getElementById('lang-en');

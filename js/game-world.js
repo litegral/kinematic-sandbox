@@ -1,4 +1,4 @@
-import { moonDefs, planetDefs } from './data.js';
+import { getLevel5ScenarioOptions, level3ZoneDefs, level4CategoryDefs, level4ItemDefs, moonDefs, planetDefs, spaceObjectDefs } from './data.js';
 
 export function createGameWorld(container) {
   const world = {
@@ -11,7 +11,16 @@ export function createGameWorld(container) {
     handMeshes: [],
     planets: [],
     orbits: [],
-    moons: []
+    moons: [],
+    level3Zones: [],
+    spaceObjects: [],
+    level4Buckets: [],
+    level4Items: [],
+    level5Planet: null,
+    level5QuestionLabels: [],
+    level5Answers: [],
+    level5Panels: [],
+    level5Lights: []
   };
 
   function createTextSprite(text, options = {}) {
@@ -20,12 +29,19 @@ export function createGameWorld(container) {
     const fontSize = options.fontSize || 42;
     const paddingX = options.paddingX || 28;
     const paddingY = options.paddingY || 18;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     ctx.font = `600 ${fontSize}px Inter, Arial, sans-serif`;
     const textWidth = ctx.measureText(text).width;
-    canvas.width = Math.ceil(textWidth + paddingX * 2);
-    canvas.height = fontSize + paddingY * 2;
+    const logicalWidth = Math.ceil(textWidth + paddingX * 2);
+    const logicalHeight = fontSize + paddingY * 2;
 
+    canvas.width = Math.ceil(logicalWidth * dpr);
+    canvas.height = Math.ceil(logicalHeight * dpr);
+    canvas.style.width = `${logicalWidth}px`;
+    canvas.style.height = `${logicalHeight}px`;
+
+    ctx.scale(dpr, dpr);
     ctx.font = `600 ${fontSize}px Inter, Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -36,8 +52,8 @@ export function createGameWorld(container) {
     const radius = 18;
     const x = 2;
     const y = 2;
-    const w = canvas.width - 4;
-    const h = canvas.height - 4;
+    const w = logicalWidth - 4;
+    const h = logicalHeight - 4;
 
     ctx.beginPath();
     ctx.moveTo(x + radius, y);
@@ -54,13 +70,18 @@ export function createGameWorld(container) {
     ctx.stroke();
 
     ctx.fillStyle = options.color || '#fff';
-    ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 1);
+    ctx.fillText(text, logicalWidth / 2, logicalHeight / 2 + 1);
 
     const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
+    texture.needsUpdate = true;
+
     const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
     const sprite = new THREE.Sprite(material);
     const scale = options.scale || 0.12;
-    sprite.scale.set(canvas.width * scale, canvas.height * scale, 1);
+    sprite.scale.set(logicalWidth * scale, logicalHeight * scale, 1);
     return sprite;
   }
 
@@ -70,9 +91,135 @@ export function createGameWorld(container) {
     world.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  function createLevel1Planets() {
+  function setSpaceBackdropVisible(visible, options = {}) {
+    if (world.sun) world.sun.visible = options.sun ?? visible;
+    if (world.starField) world.starField.visible = options.stars ?? visible;
+  }
+
+  function createSpaceObjectArtSprite(def) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    const accent = def.art?.accent || '#ffffff';
+    const symbol = def.art?.symbol || '✦';
+
+    const gradient = ctx.createRadialGradient(128, 110, 10, 128, 128, 120);
+    gradient.addColorStop(0, 'rgba(255,255,255,0.95)');
+    gradient.addColorStop(0.2, accent);
+    gradient.addColorStop(0.75, 'rgba(12,16,28,0.9)');
+    gradient.addColorStop(1, 'rgba(12,16,28,0)');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(128, 128, 110, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(128, 128, 92, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 88px Inter, Arial, sans-serif';
+    ctx.fillText(symbol, 128, 112);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    ctx.font = '600 18px Inter, Arial, sans-serif';
+    ctx.fillText('placeholder art', 128, 188);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false, opacity: 0.9 });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(10, 10, 1);
+
+    if (def.art?.illustration && world.textureLoader) {
+      world.textureLoader.load(def.art.illustration, loadedTexture => {
+        sprite.material.map = loadedTexture;
+        sprite.material.opacity = 1;
+        sprite.material.needsUpdate = true;
+        sprite.scale.set(12, 12, 1);
+      });
+    }
+
+    return sprite;
+  }
+
+  function clearLevel1Planets() {
+    world.planets.forEach(planet => world.scene.remove(planet.mesh));
+    world.orbits.forEach(orbit => world.scene.remove(orbit));
     world.planets.length = 0;
     world.orbits.length = 0;
+  }
+
+  function clearLevel2Moons() {
+    world.moons.forEach(moon => {
+      world.scene.remove(moon.mesh);
+      if (moon.label) world.scene.remove(moon.label);
+    });
+    world.moons.length = 0;
+  }
+
+  function clearLevel3Objects() {
+    world.level3Zones.forEach(zone => {
+      world.scene.remove(zone);
+      if (zone.userData?.label) world.scene.remove(zone.userData.label);
+    });
+    world.level3Zones.length = 0;
+
+    world.spaceObjects.forEach(object => {
+      world.scene.remove(object.mesh);
+      if (object.label) world.scene.remove(object.label);
+      if (object.artSprite) world.scene.remove(object.artSprite);
+    });
+    world.spaceObjects.length = 0;
+  }
+
+  function clearLevel4Classification() {
+    world.level4Buckets.forEach(bucket => {
+      world.scene.remove(bucket);
+      if (bucket.userData?.label) world.scene.remove(bucket.userData.label);
+    });
+    world.level4Buckets.length = 0;
+
+    world.level4Items.forEach(item => {
+      world.scene.remove(item.mesh);
+      if (item.label) world.scene.remove(item.label);
+      if (item.artSprite) world.scene.remove(item.artSprite);
+    });
+    world.level4Items.length = 0;
+  }
+
+  function clearLevel5Question() {
+    if (world.level5Planet) world.scene.remove(world.level5Planet);
+    world.level5Planet = null;
+
+    world.level5Panels.forEach(panel => world.scene.remove(panel));
+    world.level5Panels.length = 0;
+
+    world.level5Lights.forEach(light => world.scene.remove(light));
+    world.level5Lights.length = 0;
+
+    world.level5QuestionLabels.forEach(label => world.scene.remove(label));
+    world.level5QuestionLabels.length = 0;
+
+    world.level5Answers.forEach(answer => {
+      world.scene.remove(answer.panel);
+      if (answer.label) world.scene.remove(answer.label);
+      if (answer.gestureBadge) world.scene.remove(answer.gestureBadge);
+    });
+    world.level5Answers.length = 0;
+  }
+
+  function createLevel1Planets() {
+    clearLevel1Planets();
+    clearLevel2Moons();
+    clearLevel3Objects();
+    clearLevel4Classification();
+    clearLevel5Question();
+    setSpaceBackdropVisible(true);
 
     planetDefs.forEach((def, index) => {
       const orbitGeo = new THREE.RingGeometry(def.dist - 0.2, def.dist + 0.2, 64);
@@ -105,11 +252,11 @@ export function createGameWorld(container) {
   }
 
   function createLevel2Moons() {
-    world.moons.forEach(moon => {
-      world.scene.remove(moon.mesh);
-      if (moon.label) world.scene.remove(moon.label);
-    });
-    world.moons.length = 0;
+    clearLevel2Moons();
+    clearLevel3Objects();
+    clearLevel4Classification();
+    clearLevel5Question();
+    setSpaceBackdropVisible(true);
 
     moonDefs.forEach((def, index) => {
       const moonMesh = new THREE.Mesh(
@@ -141,6 +288,290 @@ export function createGameWorld(container) {
         orbitRadius: 5,
         speed: 0.012 + (index % 4) * 0.003
       });
+    });
+  }
+
+  function createLevel3Objects() {
+    clearLevel2Moons();
+    clearLevel3Objects();
+    clearLevel4Classification();
+    clearLevel5Question();
+    setSpaceBackdropVisible(true);
+
+    level3ZoneDefs.forEach(def => {
+      const zone = new THREE.Mesh(
+        new THREE.RingGeometry(def.inner, def.outer, 96),
+        new THREE.MeshBasicMaterial({
+          color: def.color,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.22,
+          depthWrite: false
+        })
+      );
+      zone.userData = { ...def };
+
+      const label = createTextSprite(def.label, {
+        fontSize: 34,
+        scale: 0.095,
+        background: 'rgba(8, 12, 22, 0.82)',
+        border: 'rgba(255,255,255,0.22)',
+        color: '#f5f7ff'
+      });
+      const labelYOffset = def.key === 'oort' ? -10 : 1;
+      label.position.set(0, def.centerDist + labelYOffset, 2);
+      zone.userData.label = label;
+
+      world.scene.add(zone);
+      world.scene.add(label);
+      world.level3Zones.push(zone);
+    });
+
+    spaceObjectDefs.forEach((def, index) => {
+      const mesh = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(def.size, 0),
+        new THREE.MeshPhongMaterial({ color: def.color, shininess: 35, flatShading: true })
+      );
+
+      const side = index % 2 === 0 ? -1 : 1;
+      const row = Math.floor(index / 2);
+      const spawnX = side * 214;
+      const spawnY = 62 - row * 34;
+      mesh.position.set(spawnX, spawnY, 8);
+
+      const artSprite = createSpaceObjectArtSprite(def);
+      artSprite.position.set(spawnX, spawnY + 12, 7);
+
+      const label = createTextSprite(def.name, { fontSize: 34, scale: 0.095 });
+      label.position.set(spawnX, spawnY + 3.5, 10);
+
+      world.scene.add(mesh);
+      world.scene.add(artSprite);
+      world.scene.add(label);
+
+      world.spaceObjects.push({
+        mesh,
+        artSprite,
+        label,
+        def,
+        placed: false,
+        zone: null,
+        spawnX,
+        spawnY,
+        angle: Math.random() * Math.PI * 2,
+        orbitRadius: 0,
+        speed: def.speed
+      });
+    });
+  }
+
+  function createLevel4Classification() {
+    clearLevel1Planets();
+    clearLevel2Moons();
+    clearLevel3Objects();
+    clearLevel4Classification();
+    clearLevel5Question();
+    setSpaceBackdropVisible(true);
+
+    level4CategoryDefs.forEach(def => {
+      const bucket = new THREE.Mesh(
+        new THREE.PlaneGeometry(def.width, def.height),
+        new THREE.MeshBasicMaterial({ color: def.color, transparent: true, opacity: 0.28, side: THREE.DoubleSide })
+      );
+      bucket.position.set(def.x, def.y, 0);
+      bucket.userData = { ...def, fillCount: 0 };
+
+      const label = createTextSprite(def.label, {
+        fontSize: 34,
+        scale: 0.1,
+        background: 'rgba(8, 12, 22, 0.84)',
+        border: 'rgba(255,255,255,0.24)',
+        color: '#f5f7ff'
+      });
+      label.position.set(def.x, def.y + def.height / 2 + 8, 2);
+      bucket.userData.label = label;
+
+      world.scene.add(bucket);
+      world.scene.add(label);
+      world.level4Buckets.push(bucket);
+    });
+
+    level4ItemDefs.forEach((def, index) => {
+      const mesh = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(def.size, 0),
+        new THREE.MeshPhongMaterial({ color: def.color, shininess: 35, flatShading: true })
+      );
+
+      const side = index % 2 === 0 ? -1 : 1;
+      const row = Math.floor(index / 2);
+      const spawnX = side * 222;
+      const spawnY = 96 - row * 34;
+      mesh.position.set(spawnX, spawnY, 8);
+
+      const artSprite = createSpaceObjectArtSprite(def);
+      artSprite.position.set(spawnX, spawnY + 10, 7);
+
+      const label = createTextSprite(def.name, { fontSize: 32, scale: 0.09 });
+      label.position.set(spawnX, spawnY - 4.5, 10);
+
+      world.scene.add(mesh);
+      world.scene.add(artSprite);
+      world.scene.add(label);
+
+      world.level4Items.push({
+        mesh,
+        artSprite,
+        label,
+        def,
+        placed: false,
+        bucket: null,
+        spawnX,
+        spawnY,
+        speed: def.speed,
+        phase: Math.random() * Math.PI * 2
+      });
+    });
+  }
+
+  function createLevel5Question(scenario, uiText = {}) {
+    clearLevel1Planets();
+    clearLevel2Moons();
+    clearLevel3Objects();
+    clearLevel4Classification();
+    clearLevel5Question();
+    setSpaceBackdropVisible(true, { sun: false, stars: true });
+
+    const shell = new THREE.Mesh(
+      new THREE.PlaneGeometry(420, 260),
+      new THREE.MeshBasicMaterial({ color: 0x04070d, transparent: true, opacity: 0.985, side: THREE.DoubleSide })
+    );
+    shell.position.set(0, 0, -8);
+    world.scene.add(shell);
+    world.level5Panels.push(shell);
+
+    const stage = new THREE.Mesh(
+      new THREE.PlaneGeometry(214, 126),
+      new THREE.MeshBasicMaterial({ color: 0x07090d, transparent: true, opacity: 0.18, side: THREE.DoubleSide })
+    );
+    stage.position.set(0, 28, -5);
+    world.scene.add(stage);
+    world.level5Panels.push(stage);
+
+    const answerDeck = new THREE.Mesh(
+      new THREE.PlaneGeometry(362, 176),
+      new THREE.MeshBasicMaterial({ color: 0x0b1020, transparent: true, opacity: 0.97, side: THREE.DoubleSide })
+    );
+    answerDeck.position.set(0, -28, -3);
+    world.scene.add(answerDeck);
+    world.level5Panels.push(answerDeck);
+
+    const keyLight = new THREE.PointLight(0xffffff, 1.9, 760);
+    keyLight.position.set(110, 95, 170);
+    const fillLight = new THREE.PointLight(0xf3f6ff, 0.85, 780);
+    fillLight.position.set(-120, 50, 150);
+    const rimLight = new THREE.PointLight(0xc7d2fe, 0.6, 720);
+    rimLight.position.set(0, -30, 125);
+    world.scene.add(keyLight);
+    world.scene.add(fillLight);
+    world.scene.add(rimLight);
+    world.level5Lights.push(keyLight, fillLight, rimLight);
+
+    const planetDef = planetDefs.find(def => def.name === scenario.planet);
+    const scenarioOptions = getLevel5ScenarioOptions(scenario, uiText.lang || 'en');
+    if (planetDef) {
+      world.level5Planet = new THREE.Mesh(
+        new THREE.SphereGeometry(26, 48, 48),
+        new THREE.MeshPhongMaterial({ map: world.textureLoader.load(planetDef.texture), shininess: 10 })
+      );
+      world.level5Planet.position.set(0, 24, 4);
+      world.scene.add(world.level5Planet);
+    }
+
+    const eyebrow = createTextSprite(uiText.kicker || 'Planet Survival Quiz', {
+      fontSize: 26,
+      scale: 0.1,
+      background: 'rgba(255,255,255,0.05)',
+      border: 'rgba(255,255,255,0.10)',
+      color: '#cbd5e1'
+    });
+    eyebrow.position.set(0, 102, 3);
+    world.scene.add(eyebrow);
+    world.level5QuestionLabels.push(eyebrow);
+
+    const title = createTextSprite(scenario.planet, {
+      fontSize: 48,
+      scale: 0.12,
+      background: 'rgba(8, 12, 22, 0.9)',
+      border: 'rgba(255,255,255,0.24)',
+      color: '#f5f7ff'
+    });
+    title.position.set(0, 84, 3);
+    world.scene.add(title);
+    world.level5QuestionLabels.push(title);
+
+    const prompt = createTextSprite(uiText.prompt || 'What kills you first?', {
+      fontSize: 30,
+      scale: 0.11,
+      background: 'rgba(8, 12, 22, 0.74)',
+      border: 'rgba(255,255,255,0.14)',
+      color: '#cbd5e1'
+    });
+    prompt.position.set(0, 65, 3);
+    world.scene.add(prompt);
+    world.level5QuestionLabels.push(prompt);
+
+    const hint = createTextSprite(uiText.hint || 'Answer with ✌️  👍  🤘  🖖', {
+      fontSize: 24,
+      scale: 0.1,
+      background: 'rgba(8, 12, 22, 0.72)',
+      border: 'rgba(255,255,255,0.12)',
+      color: '#94a3b8'
+    });
+    hint.position.set(0, -108, 3);
+    world.scene.add(hint);
+    world.level5QuestionLabels.push(hint);
+
+    const gestureMap = [
+      { gesture: 'Peace', symbol: '✌️', x: -92, y: -10, color: 0x182337 },
+      { gesture: 'ThumbsUp', symbol: '👍', x: 92, y: -10, color: 0x1d213c },
+      { gesture: 'Metal', symbol: '🤘', x: -92, y: -58, color: 0x221b39 },
+      { gesture: 'Vulcan', symbol: '🖖', x: 92, y: -58, color: 0x15263a }
+    ];
+
+    gestureMap.forEach(def => {
+      const panel = new THREE.Mesh(
+        new THREE.PlaneGeometry(176, 46),
+        new THREE.MeshBasicMaterial({ color: def.color, transparent: true, opacity: 0.94, side: THREE.DoubleSide })
+      );
+      panel.userData.baseScale = { x: 1, y: 1 };
+      panel.position.set(def.x, def.y, 0);
+
+      const gestureBadge = createTextSprite(def.symbol, {
+        fontSize: 72,
+        scale: 0.135,
+        background: 'rgba(255,255,255,0.10)',
+        border: 'rgba(255,255,255,0.18)',
+        color: '#fff',
+        paddingX: 28,
+        paddingY: 24
+      });
+      gestureBadge.position.set(def.x - 66, def.y, 2);
+
+      const label = createTextSprite(scenarioOptions[def.gesture], {
+        fontSize: 30,
+        scale: 0.12,
+        background: 'rgba(8, 12, 22, 0.98)',
+        border: 'rgba(255,255,255,0.10)',
+        color: '#fff',
+        paddingX: 30,
+        paddingY: 20
+      });
+      label.position.set(def.x + 12, def.y, 2);
+
+      world.scene.add(panel);
+      world.scene.add(gestureBadge);
+      world.scene.add(label);
+      world.level5Answers.push({ ...def, panel, label, gestureBadge, baseY: def.y, baseLabelScale: label.scale.clone(), baseGestureScale: gestureBadge.scale.clone() });
     });
   }
 
@@ -202,7 +633,7 @@ export function createGameWorld(container) {
     return world.handMeshes[8].position;
   }
 
-  function animateEntities(grabbedPlanet, grabbedMoon) {
+  function animateEntities(grabbedPlanet, grabbedMoon, grabbedSpaceObject, grabbedClassificationItem) {
     if (world.sun) world.sun.rotation.y += 0.0007;
     if (world.starField) {
       world.starField.rotation.y += 0.0002;
@@ -235,6 +666,64 @@ export function createGameWorld(container) {
         moon.label.position.x = moon.mesh.position.x;
         moon.label.position.y = moon.mesh.position.y + 5.5;
         moon.label.position.z = moon.mesh.position.z + 2;
+      }
+    }
+
+    for (const object of world.spaceObjects) {
+      object.mesh.rotation.x += 0.004;
+      object.mesh.rotation.y += 0.006;
+      if (object.placed && object !== grabbedSpaceObject) {
+        object.angle += object.speed;
+        object.mesh.position.x = Math.cos(object.angle) * object.orbitRadius;
+        object.mesh.position.y = Math.sin(object.angle) * object.orbitRadius;
+        object.mesh.position.z = 8;
+        object.artSprite.position.x = object.mesh.position.x;
+        object.artSprite.position.y = object.mesh.position.y + 12;
+        object.artSprite.position.z = 7;
+        object.label.position.x = object.mesh.position.x;
+        object.label.position.y = object.mesh.position.y + 3.5;
+        object.label.position.z = 10;
+      } else {
+        object.artSprite.position.x = object.mesh.position.x;
+        object.artSprite.position.y = object.mesh.position.y + 12;
+        object.artSprite.position.z = object.mesh.position.z - 1;
+        object.label.position.x = object.mesh.position.x;
+        object.label.position.y = object.mesh.position.y + 3.5;
+        object.label.position.z = object.mesh.position.z + 2;
+      }
+    }
+
+    for (const item of world.level4Items) {
+      item.mesh.rotation.x += 0.004;
+      item.mesh.rotation.y += 0.006;
+      if (!item.placed && item !== grabbedClassificationItem) {
+        item.mesh.position.y += Math.sin(Date.now() * 0.002 + item.phase) * 0.04;
+        item.artSprite.position.x = item.mesh.position.x;
+        item.artSprite.position.y = item.mesh.position.y + 10;
+        item.artSprite.position.z = item.mesh.position.z - 1;
+        item.label.position.x = item.mesh.position.x;
+        item.label.position.y = item.mesh.position.y - 4.5;
+        item.label.position.z = item.mesh.position.z + 2;
+      } else if (item.placed && item !== grabbedClassificationItem) {
+        item.artSprite.position.x = item.mesh.position.x;
+        item.artSprite.position.y = item.mesh.position.y + 9;
+        item.artSprite.position.z = 7;
+        item.label.position.x = item.mesh.position.x;
+        item.label.position.y = item.mesh.position.y - 4.5;
+        item.label.position.z = 10;
+      }
+    }
+
+    if (world.level5Planet) world.level5Planet.rotation.y += 0.01;
+    for (const answer of world.level5Answers) {
+      answer.panel.position.y = answer.baseY + Math.sin(Date.now() * 0.0018 + answer.x * 0.02) * 1.2;
+      answer.panel.rotation.z = Math.sin(Date.now() * 0.001 + answer.x * 0.01) * 0.02;
+      answer.label.position.y = answer.panel.position.y;
+      answer.label.position.x = answer.panel.position.x + 12;
+      answer.label.material.opacity = 0.98;
+      if (answer.gestureBadge) {
+        answer.gestureBadge.position.y = answer.panel.position.y;
+        answer.gestureBadge.position.x = answer.panel.position.x - 66;
       }
     }
   }
@@ -288,7 +777,11 @@ export function createGameWorld(container) {
     world,
     init,
     ensureHandMeshes,
+    createLevel1Planets,
     createLevel2Moons,
+    createLevel3Objects,
+    createLevel4Classification,
+    createLevel5Question,
     updateHandMeshes,
     animateEntities,
     render
