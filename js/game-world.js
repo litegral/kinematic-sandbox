@@ -287,6 +287,22 @@ export function createGameWorld(container) {
         new THREE.MeshPhongMaterial({ map: world.textureLoader.load(def.texture) })
       );
 
+      if (def.name === 'Saturn') {
+        const satRing = new THREE.Mesh(
+          new THREE.RingGeometry(def.radius * 1.45, def.radius * 2.25, 64),
+          new THREE.MeshBasicMaterial({
+            color: 0xf2d694,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.72,
+            depthWrite: false
+          })
+        );
+        satRing.rotation.x = Math.PI * 0.42;
+        satRing.rotation.y = Math.PI * 0.08;
+        mesh.add(satRing);
+      }
+
       const side = index % 2 === 0 ? -1 : 1;
       const row = Math.floor(index / 2);
       const spawnX = side * 140;
@@ -552,6 +568,21 @@ export function createGameWorld(container) {
         new THREE.SphereGeometry(26, 48, 48),
         new THREE.MeshPhongMaterial({ map: world.textureLoader.load(planetDef.texture), shininess: 10 })
       );
+      if (planetDef.name === 'Saturn') {
+        const satRing = new THREE.Mesh(
+          new THREE.RingGeometry(26 * 1.45, 26 * 2.25, 64),
+          new THREE.MeshBasicMaterial({
+            color: 0xf2d694,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.72,
+            depthWrite: false
+          })
+        );
+        satRing.rotation.x = Math.PI * 0.42;
+        satRing.rotation.y = Math.PI * 0.08;
+        world.level5Planet.add(satRing);
+      }
       world.level5Planet.position.set(0, 24, 4);
       world.scene.add(world.level5Planet);
     }

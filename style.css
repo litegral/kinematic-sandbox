@@ -76,16 +76,16 @@ body {
 }
 
 #stats {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.5px;
-  color: #ddd;
-  background: linear-gradient(180deg, rgba(14, 18, 30, 0.78), rgba(7, 9, 15, 0.68));
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(179, 212, 255, 0.10);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(12px);
+  letter-spacing: 0.4px;
+  color: #bbb;
+  background: linear-gradient(180deg, rgba(14, 18, 30, 0.72), rgba(7, 9, 15, 0.62));
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(179, 212, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(10px);
 }
 
 

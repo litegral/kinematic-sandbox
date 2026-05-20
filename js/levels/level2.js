@@ -145,14 +145,9 @@ export function handleLevel2Interaction({
 
     clearPlanetHighlights(planets);
     if (nearestPlanet && nearestDist < Math.max(34, nearestPlanet.def.radius + 22)) {
+      // Only visually highlight — do NOT reveal correct/wrong until the moon is dropped
       const isCorrectTarget = state.grabbedMoon.def.parent === nearestPlanet.def.name;
       highlightPlanet(nearestPlanet, isCorrectTarget);
-      updateStats(
-        isCorrectTarget
-          ? t.statusMoonCorrect.replace('{moon}', t.moonNames[state.grabbedMoon.def.name] || state.grabbedMoon.def.name).replace('{planet}', t.planetNames[nearestPlanet.def.name])
-          : t.statusMoonWrong.replace('{moon}', t.moonNames[state.grabbedMoon.def.name] || state.grabbedMoon.def.name).replace('{planet}', t.planetNames[nearestPlanet.def.name]),
-        isCorrectTarget ? 'success-text' : ''
-      );
     }
   } else {
     clearPlanetHighlights(planets);
