@@ -83,7 +83,7 @@ export function handleLevel2Interaction({
 
     if (closestPlanet) {
       state.totalDrops++;
-      const moonName = state.grabbedMoon.def.name;
+      const moonName = t.moonNames[state.grabbedMoon.def.name] || state.grabbedMoon.def.name;
       const planetName = t.planetNames[closestPlanet.def.name];
 
       if (state.grabbedMoon.def.parent === closestPlanet.def.name) {
@@ -149,8 +149,8 @@ export function handleLevel2Interaction({
       highlightPlanet(nearestPlanet, isCorrectTarget);
       updateStats(
         isCorrectTarget
-          ? t.statusMoonCorrect.replace('{moon}', state.grabbedMoon.def.name).replace('{planet}', t.planetNames[nearestPlanet.def.name])
-          : t.statusMoonWrong.replace('{moon}', state.grabbedMoon.def.name).replace('{planet}', t.planetNames[nearestPlanet.def.name]),
+          ? t.statusMoonCorrect.replace('{moon}', t.moonNames[state.grabbedMoon.def.name] || state.grabbedMoon.def.name).replace('{planet}', t.planetNames[nearestPlanet.def.name])
+          : t.statusMoonWrong.replace('{moon}', t.moonNames[state.grabbedMoon.def.name] || state.grabbedMoon.def.name).replace('{planet}', t.planetNames[nearestPlanet.def.name]),
         isCorrectTarget ? 'success-text' : ''
       );
     }

@@ -3,6 +3,15 @@ export const CAM_PADDING = 100;
 export const i18n = {
   en: {
     title: 'Solary',
+    pageTitle: 'Solary - Litegral Labs',
+    metaDescription: 'Solary is an interactive space learning experience by Litegral Labs.',
+    logoAlt: 'Solary Logo',
+    factImageAlt: 'Planet illustration',
+    musicToggleLabel: 'Toggle music',
+    languageEnglish: 'English',
+    languageIndonesian: 'Indonesian',
+    languageEnglishCode: 'EN',
+    languageIndonesianCode: 'ID',
     statusDrag: 'Drag the planets to their correct rings.',
     statusCorrect: 'Great job! You placed {planet}.',
     statusWrong: 'Oops! That ring belongs to {target}.',
@@ -35,8 +44,8 @@ export const i18n = {
     level5Btn: 'Start Level 5',
     level5Badge: 'Final Challenge',
     level5Question: 'What kills you first?',
-    level5Hint: 'Answer with ✌️ 👍 🤘 🖖',
-    statusLevel5Prompt: '{planet}: what kills you first? Use ✌️ 👍 🤘 🖖 to answer.',
+    level5Hint: 'Hold ✌️ 👍 🤘 🖖 for a moment to answer',
+    statusLevel5Prompt: '{planet}: what kills you first? Hold ✌️ 👍 🤘 🖖 for a moment to answer.',
     statusLevel5Correct: 'Correct! {answer}',
     statusLevel5Wrong: 'Not quite. {answer} is not the first danger on {planet}.',
     statusLevel5Win: 'You survived the final space quiz!',
@@ -55,7 +64,15 @@ export const i18n = {
     btnRestart: 'Play Again',
     btnShare: 'Share Results',
     btnContinue: 'Continue / 👍',
+    btnLoading: '...',
+    btnDownloaded: 'Downloaded!',
+    btnRetry: 'Retry',
     funFact: 'Fun Fact',
+    cameraError: 'Optical link failed. Please enable camera access in your browser to play.',
+    scorecardTimeLabel: 'TIME',
+    scorecardAccuracyLabel: 'ACCURACY',
+    minuteUnit: 'm',
+    secondUnit: 's',
     winStats: 'Time: {time} | Accuracy: {acc}%',
     shareText: 'I completed the Solar System in Solary! 🪐\n⏱️ Time: {time}\n🎯 Accuracy: {acc}%\nPlay with your hands at: https://solary.litegral.com',
     shareSuccess: 'Copied!',
@@ -78,10 +95,59 @@ export const i18n = {
       gas: 'Gas Giant',
       ice: 'Ice Giant',
       dwarf: 'Dwarf Planet'
+    },
+    level4BucketLabels: {
+      terrestrial: 'Terrestrial Planets',
+      gas: 'Gas Giants',
+      ice: 'Ice Giants',
+      dwarf: 'Dwarf Planets'
+    },
+    moonNames: {
+      Moon: 'Moon',
+      Phobos: 'Phobos',
+      Deimos: 'Deimos',
+      Io: 'Io',
+      Europa: 'Europa',
+      Ganymede: 'Ganymede',
+      Callisto: 'Callisto',
+      Titan: 'Titan',
+      Enceladus: 'Enceladus',
+      Titania: 'Titania',
+      Oberon: 'Oberon',
+      Triton: 'Triton'
+    },
+    spaceObjectNames: {
+      Vesta: 'Vesta',
+      Ceres: 'Ceres',
+      Chiron: 'Chiron',
+      "Halley's Comet": "Halley's Comet",
+      'Hale-Bopp': 'Hale-Bopp',
+      'Shoemaker-Levy 9': 'Shoemaker-Levy 9',
+      Pluto: 'Pluto',
+      Haumea: 'Haumea',
+      Makemake: 'Makemake',
+      Mercury: 'Mercury',
+      Venus: 'Venus',
+      Earth: 'Earth',
+      Mars: 'Mars',
+      Jupiter: 'Jupiter',
+      Saturn: 'Saturn',
+      Uranus: 'Uranus',
+      Neptune: 'Neptune',
+      Eris: 'Eris'
     }
   },
   id: {
     title: 'Solary',
+    pageTitle: 'Solary - Litegral Labs',
+    metaDescription: 'Solary adalah pengalaman belajar antariksa interaktif dari Litegral Labs.',
+    logoAlt: 'Logo Solary',
+    factImageAlt: 'Ilustrasi planet',
+    musicToggleLabel: 'Nyalakan atau matikan musik',
+    languageEnglish: 'Inggris',
+    languageIndonesian: 'Indonesia',
+    languageEnglishCode: 'EN',
+    languageIndonesianCode: 'ID',
     statusDrag: 'Tarik planet ke cincin yang tepat.',
     statusCorrect: 'Bagus! Kamu menempatkan {planet}.',
     statusWrong: 'Ups! Cincin itu milik {target}.',
@@ -114,8 +180,8 @@ export const i18n = {
     level5Btn: 'Mulai Level 5',
     level5Badge: 'Tantangan Final',
     level5Question: 'Apa yang membunuhmu lebih dulu?',
-    level5Hint: 'Jawab dengan ✌️ 👍 🤘 🖖',
-    statusLevel5Prompt: '{planet}: apa yang membunuhmu lebih dulu? Jawab dengan ✌️ 👍 🤘 🖖.',
+    level5Hint: 'Tahan ✌️ 👍 🤘 🖖 sebentar untuk menjawab',
+    statusLevel5Prompt: '{planet}: apa yang membunuhmu lebih dulu? Tahan ✌️ 👍 🤘 🖖 sebentar untuk menjawab.',
     statusLevel5Correct: 'Benar! {answer}',
     statusLevel5Wrong: 'Belum tepat. {answer} bukan bahaya pertama di {planet}.',
     statusLevel5Win: 'Kamu menaklukkan kuis akhir tata surya!',
@@ -134,7 +200,15 @@ export const i18n = {
     btnRestart: 'Main Lagi',
     btnShare: 'Bagikan Hasil',
     btnContinue: 'Lanjut / 👍',
+    btnLoading: '...',
+    btnDownloaded: 'Diunduh!',
+    btnRetry: 'Coba Lagi',
     funFact: 'Fakta Menarik',
+    cameraError: 'Koneksi kamera gagal. Mohon izinkan akses kamera di browser untuk bermain.',
+    scorecardTimeLabel: 'WAKTU',
+    scorecardAccuracyLabel: 'AKURASI',
+    minuteUnit: 'm',
+    secondUnit: 'd',
     winStats: 'Waktu: {time} | Akurasi: {acc}%',
     shareText: 'Saya berhasil menyusun Tata Surya di Solary! 🪐\n⏱️ Waktu: {time}\n🎯 Akurasi: {acc}%\nMainkan dengan tanganmu di: https://solary.litegral.com',
     shareSuccess: 'Disalin!',
@@ -157,6 +231,46 @@ export const i18n = {
       gas: 'Raksasa Gas',
       ice: 'Raksasa Es',
       dwarf: 'Planet Katai'
+    },
+    level4BucketLabels: {
+      terrestrial: 'Planet Kebumian',
+      gas: 'Raksasa Gas',
+      ice: 'Raksasa Es',
+      dwarf: 'Planet Katai'
+    },
+    moonNames: {
+      Moon: 'Bulan',
+      Phobos: 'Phobos',
+      Deimos: 'Deimos',
+      Io: 'Io',
+      Europa: 'Europa',
+      Ganymede: 'Ganymede',
+      Callisto: 'Callisto',
+      Titan: 'Titan',
+      Enceladus: 'Enceladus',
+      Titania: 'Titania',
+      Oberon: 'Oberon',
+      Triton: 'Triton'
+    },
+    spaceObjectNames: {
+      Vesta: 'Vesta',
+      Ceres: 'Ceres',
+      Chiron: 'Chiron',
+      "Halley's Comet": 'Komet Halley',
+      'Hale-Bopp': 'Hale-Bopp',
+      'Shoemaker-Levy 9': 'Shoemaker-Levy 9',
+      Pluto: 'Pluto',
+      Haumea: 'Haumea',
+      Makemake: 'Makemake',
+      Mercury: 'Merkurius',
+      Venus: 'Venus',
+      Earth: 'Bumi',
+      Mars: 'Mars',
+      Jupiter: 'Yupiter',
+      Saturn: 'Saturnus',
+      Uranus: 'Uranus',
+      Neptune: 'Neptunus',
+      Eris: 'Eris'
     }
   }
 };
@@ -188,18 +302,18 @@ export const moonDefs = [
 ];
 
 export const level3ZoneDefs = [
-  { key: 'inner', label: 'Inner Solar System', inner: 14, outer: 44, centerDist: 29, color: 0x4fc3f7, snapThreshold: 18 },
-  { key: 'asteroid', label: 'Asteroid Belt', inner: 46, outer: 64, centerDist: 55, color: 0xffb74d, snapThreshold: 14 },
-  { key: 'outer', label: 'Outer Solar System', inner: 66, outer: 102, centerDist: 84, color: 0x81c784, snapThreshold: 20 },
-  { key: 'kuiper', label: 'Kuiper Belt', inner: 106, outer: 128, centerDist: 117, color: 0xba68c8, snapThreshold: 16 },
-  { key: 'oort', label: 'Oort Cloud', inner: 132, outer: 166, centerDist: 149, color: 0x90a4ae, snapThreshold: 20 }
+  { key: 'inner', inner: 14, outer: 44, centerDist: 29, color: 0x4fc3f7, snapThreshold: 18 },
+  { key: 'asteroid', inner: 46, outer: 64, centerDist: 55, color: 0xffb74d, snapThreshold: 14 },
+  { key: 'outer', inner: 66, outer: 102, centerDist: 84, color: 0x81c784, snapThreshold: 20 },
+  { key: 'kuiper', inner: 106, outer: 128, centerDist: 117, color: 0xba68c8, snapThreshold: 16 },
+  { key: 'oort', inner: 132, outer: 166, centerDist: 149, color: 0x90a4ae, snapThreshold: 20 }
 ];
 
 export const level4CategoryDefs = [
-  { key: 'terrestrial', label: 'Terrestrial Planets', x: -88, y: 58, width: 108, height: 54, color: 0xffb74d },
-  { key: 'gas', label: 'Gas Giants', x: 88, y: 58, width: 108, height: 54, color: 0xff8a65 },
-  { key: 'ice', label: 'Ice Giants', x: -88, y: -42, width: 108, height: 54, color: 0x4fc3f7 },
-  { key: 'dwarf', label: 'Dwarf Planets', x: 88, y: -42, width: 108, height: 54, color: 0xce93d8 }
+  { key: 'terrestrial', x: -88, y: 58, width: 108, height: 54, color: 0xffb74d },
+  { key: 'gas', x: 88, y: 58, width: 108, height: 54, color: 0xff8a65 },
+  { key: 'ice', x: -88, y: -42, width: 108, height: 54, color: 0x4fc3f7 },
+  { key: 'dwarf', x: 88, y: -42, width: 108, height: 54, color: 0xce93d8 }
 ];
 
 export const level4ItemDefs = [

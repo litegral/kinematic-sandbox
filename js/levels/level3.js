@@ -45,7 +45,7 @@ export function handleLevel3Interaction({
 
     if (closestZone) {
       state.totalDrops++;
-      const objectName = state.grabbedSpaceObject.def.name;
+      const objectName = t.spaceObjectNames[state.grabbedSpaceObject.def.name] || state.grabbedSpaceObject.def.name;
       const zoneLabel = t.level3Zones[closestZone.userData.key];
 
       if (closestZone.userData.key === state.grabbedSpaceObject.def.zone) {

@@ -127,10 +127,6 @@ export function createGameWorld(container) {
     ctx.font = '900 88px Inter, Arial, sans-serif';
     ctx.fillText(symbol, 128, 112);
 
-    ctx.fillStyle = 'rgba(255,255,255,0.88)';
-    ctx.font = '600 18px Inter, Arial, sans-serif';
-    ctx.fillText('placeholder art', 128, 188);
-
     const texture = new THREE.CanvasTexture(canvas);
     const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false, opacity: 0.9 });
     const sprite = new THREE.Sprite(material);
@@ -146,6 +142,10 @@ export function createGameWorld(container) {
     }
 
     return sprite;
+  }
+
+  function getLocalizedName(dictionary, key) {
+    return dictionary?.[key] || key;
   }
 
   function clearLevel1Planets() {
@@ -289,7 +289,7 @@ export function createGameWorld(container) {
         planet.level2GuideRing = ring;
         world.level2Guides.push({ planet, ring });
       } else {
-        const label = createTextSprite(uiText.noMoons || 'No moons', {
+        const label = createTextSprite(uiText.noMoons || uiText.level2NoMoons || '', {
           fontSize: 18,
           scale: 0.082,
           background: 'rgba(15, 23, 42, 0.85)',
@@ -318,7 +318,7 @@ export function createGameWorld(container) {
       const spawnY = 70 - row * 25;
       moonMesh.position.set(spawnX, spawnY, 8);
 
-      const label = createTextSprite(def.name, { fontSize: 36, scale: 0.095 });
+      const label = createTextSprite(getLocalizedName(uiText.moonNames, def.name), { fontSize: 36, scale: 0.095 });
       label.position.set(spawnX, spawnY + 5.5, 10);
 
       world.scene.add(moonMesh);
@@ -339,7 +339,7 @@ export function createGameWorld(container) {
     });
   }
 
-  function createLevel3Objects() {
+  function createLevel3Objects(uiText = {}) {
     clearLevel2Moons();
     clearLevel3Objects();
     clearLevel4Classification();
@@ -359,7 +359,7 @@ export function createGameWorld(container) {
       );
       zone.userData = { ...def };
 
-      const label = createTextSprite(def.label, {
+      const label = createTextSprite(getLocalizedName(uiText.level3Zones, def.key), {
         fontSize: 34,
         scale: 0.095,
         background: 'rgba(8, 12, 22, 0.82)',
@@ -390,7 +390,7 @@ export function createGameWorld(container) {
       const artSprite = createSpaceObjectArtSprite(def);
       artSprite.position.set(spawnX, spawnY + 12, 7);
 
-      const label = createTextSprite(def.name, { fontSize: 34, scale: 0.095 });
+      const label = createTextSprite(getLocalizedName(uiText.spaceObjectNames, def.name), { fontSize: 34, scale: 0.095 });
       label.position.set(spawnX, spawnY + 3.5, 10);
 
       world.scene.add(mesh);
@@ -413,7 +413,7 @@ export function createGameWorld(container) {
     });
   }
 
-  function createLevel4Classification() {
+  function createLevel4Classification(uiText = {}) {
     clearLevel1Planets();
     clearLevel2Moons();
     clearLevel3Objects();
@@ -429,7 +429,7 @@ export function createGameWorld(container) {
       bucket.position.set(def.x, def.y, 0);
       bucket.userData = { ...def, fillCount: 0 };
 
-      const label = createTextSprite(def.label, {
+      const label = createTextSprite(getLocalizedName(uiText.level4BucketLabels, def.key), {
         fontSize: 40,
         scale: 0.11,
         background: 'rgba(8, 12, 22, 0.84)',
@@ -459,7 +459,7 @@ export function createGameWorld(container) {
       const artSprite = createSpaceObjectArtSprite(def);
       artSprite.position.set(spawnX, spawnY + 10, 7);
 
-      const label = createTextSprite(def.name, { fontSize: 36, scale: 0.1 });
+      const label = createTextSprite(getLocalizedName(uiText.spaceObjectNames, def.name), { fontSize: 36, scale: 0.1 });
       label.position.set(spawnX, spawnY - 5.5, 10);
 
       world.scene.add(mesh);
@@ -497,14 +497,6 @@ export function createGameWorld(container) {
     world.scene.add(shell);
     world.level5Panels.push(shell);
 
-    const stage = new THREE.Mesh(
-      new THREE.PlaneGeometry(214, 126),
-      new THREE.MeshBasicMaterial({ color: 0x07090d, transparent: true, opacity: 0.18, side: THREE.DoubleSide })
-    );
-    stage.position.set(0, 28, -5);
-    world.scene.add(stage);
-    world.level5Panels.push(stage);
-
     const answerDeck = new THREE.Mesh(
       new THREE.PlaneGeometry(362, 176),
       new THREE.MeshBasicMaterial({ color: 0x0b1020, transparent: true, opacity: 0.97, side: THREE.DoubleSide })
@@ -535,18 +527,7 @@ export function createGameWorld(container) {
       world.scene.add(world.level5Planet);
     }
 
-    const eyebrow = createTextSprite(uiText.kicker || 'Planet Survival Quiz', {
-      fontSize: 26,
-      scale: 0.1,
-      background: 'rgba(255,255,255,0.05)',
-      border: 'rgba(255,255,255,0.10)',
-      color: '#cbd5e1'
-    });
-    eyebrow.position.set(0, 102, 3);
-    world.scene.add(eyebrow);
-    world.level5QuestionLabels.push(eyebrow);
-
-    const title = createTextSprite(scenario.planet, {
+    const title = createTextSprite(getLocalizedName(uiText.planetNames, scenario.planet), {
       fontSize: 48,
       scale: 0.12,
       background: 'rgba(8, 12, 22, 0.9)',
@@ -556,28 +537,6 @@ export function createGameWorld(container) {
     title.position.set(0, 84, 3);
     world.scene.add(title);
     world.level5QuestionLabels.push(title);
-
-    const prompt = createTextSprite(uiText.prompt || 'What kills you first?', {
-      fontSize: 30,
-      scale: 0.11,
-      background: 'rgba(8, 12, 22, 0.74)',
-      border: 'rgba(255,255,255,0.14)',
-      color: '#cbd5e1'
-    });
-    prompt.position.set(0, 65, 3);
-    world.scene.add(prompt);
-    world.level5QuestionLabels.push(prompt);
-
-    const hint = createTextSprite(uiText.hint || 'Answer with ✌️  👍  🤘  🖖', {
-      fontSize: 24,
-      scale: 0.1,
-      background: 'rgba(8, 12, 22, 0.72)',
-      border: 'rgba(255,255,255,0.12)',
-      color: '#94a3b8'
-    });
-    hint.position.set(0, -108, 3);
-    world.scene.add(hint);
-    world.level5QuestionLabels.push(hint);
 
     const gestureMap = [
       { gesture: 'Peace', symbol: '✌️', x: -92, y: -10, color: 0x182337 },
@@ -790,7 +749,7 @@ export function createGameWorld(container) {
     world.renderer.render(world.scene, world.camera);
   }
 
-  function init() {
+  function init(uiText = {}) {
     world.scene = new THREE.Scene();
     world.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     world.camera.position.z = 180;
@@ -827,7 +786,7 @@ export function createGameWorld(container) {
     world.starField = new THREE.Points(starsGeometry, starsMaterial);
     world.scene.add(world.starField);
 
-    createLevel1Planets();
+    createLevel1Planets(uiText);
     window.addEventListener('resize', handleResize);
   }
 

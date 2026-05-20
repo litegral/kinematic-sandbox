@@ -1,5 +1,5 @@
 import { dom } from './dom.js';
-import { getLevel5ScenarioFact, getLevel5ScenarioOptions, planetFacts } from './data.js';
+import { getLevel5ScenarioFact, planetFacts } from './data.js';
 import { state, getT } from './state.js';
 import { playGachaRevealSFX, playSuccessSFX } from './audio.js';
 
@@ -21,12 +21,6 @@ function clearChildren(element) {
   element.innerHTML = '';
 }
 
-const level5GestureDefs = [
-  { gesture: 'Peace', symbol: '✌️' },
-  { gesture: 'ThumbsUp', symbol: '👍' },
-  { gesture: 'Metal', symbol: '🤘' },
-  { gesture: 'Vulcan', symbol: '🖖' }
-];
 
 function createButton(label, onClick, extraClass = '') {
   const button = document.createElement('button');
@@ -39,6 +33,30 @@ function createButton(label, onClick, extraClass = '') {
 function updateLanguageControls() {
   dom.langEn.className = state.currentLang === 'en' ? 'active' : '';
   dom.langId.className = state.currentLang === 'id' ? 'active' : '';
+}
+
+function updateDocumentText(t) {
+  document.documentElement.lang = state.currentLang;
+  document.title = t.pageTitle;
+  document.querySelector('meta[name="description"]')?.setAttribute('content', t.metaDescription);
+  document.querySelector('meta[property="og:title"]')?.setAttribute('content', t.pageTitle);
+  document.querySelector('meta[property="og:description"]')?.setAttribute('content', t.metaDescription);
+  document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', t.pageTitle);
+  document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', t.metaDescription);
+
+  dom.uiLogo.alt = t.logoAlt;
+  dom.bgmToggle.title = t.musicToggleLabel;
+  dom.bgmToggle.setAttribute('aria-label', t.musicToggleLabel);
+  dom.langEn.innerText = t.languageEnglishCode;
+  dom.langEn.title = t.languageEnglish;
+  dom.langEn.setAttribute('aria-label', t.languageEnglish);
+  dom.langId.innerText = t.languageIndonesianCode;
+  dom.langId.title = t.languageIndonesian;
+  dom.langId.setAttribute('aria-label', t.languageIndonesian);
+  dom.factImage.alt = t.factImageAlt;
+  dom.factKicker.innerText = t.funFact;
+  dom.factTitle.innerText = t.planetNames.Earth;
+  dom.factContinue.innerText = t.btnContinue;
 }
 
 export function configureUIActions(nextActions) {
@@ -68,47 +86,6 @@ export function updateFactButtonText() {
   dom.factText.innerText = fact[state.currentLang];
 }
 
-export function setLevel5HUDVisible(visible) {
-  if (!dom.level5Hud) return;
-  dom.level5Hud.style.display = visible ? 'block' : 'none';
-}
-
-export function renderLevel5HUD(scenario) {
-  if (!dom.level5Hud || !scenario) return;
-
-  const t = getT();
-  dom.level5Kicker.innerText = t.level5Title;
-  dom.level5Planet.innerText = t.planetNames[scenario.planet] || scenario.planet;
-  if (dom.level5Badge) dom.level5Badge.innerText = t.level5Badge;
-  dom.level5Question.innerText = t.level5Question;
-  dom.level5Footnote.innerText = t.level5Hint;
-  clearChildren(dom.level5Answers);
-
-  const options = getLevel5ScenarioOptions(scenario, state.currentLang);
-
-  for (const def of level5GestureDefs) {
-    const card = document.createElement('div');
-    card.className = 'level5-answer';
-    card.dataset.gesture = def.gesture;
-    card.innerHTML = `
-      <div class="level5-answer-gesture">${def.symbol}</div>
-      <div class="level5-answer-copy">${options[def.gesture]}</div>
-    `;
-    dom.level5Answers.appendChild(card);
-  }
-
-  setLevel5HUDVisible(true);
-}
-
-export function setLevel5HUDAnswerState(selectedGesture, result = 'active') {
-  if (!dom.level5Answers) return;
-
-  for (const card of dom.level5Answers.children) {
-    card.classList.remove('active', 'correct', 'wrong');
-    if (card.dataset.gesture === selectedGesture) card.classList.add(result);
-  }
-}
-
 function renderOnboardingActions() {
   const t = getT();
   clearChildren(dom.obActions);
@@ -119,8 +96,8 @@ function renderOnboardingActions() {
   }
 
   if (state.obState === 'langSelect') {
-    dom.obActions.appendChild(createButton('English', () => actions.onChooseLanguage('en')));
-    dom.obActions.appendChild(createButton('Bahasa Indonesia', () => actions.onChooseLanguage('id')));
+    dom.obActions.appendChild(createButton(t.languageEnglish, () => actions.onChooseLanguage('en')));
+    dom.obActions.appendChild(createButton(t.languageIndonesian, () => actions.onChooseLanguage('id')));
     return;
   }
 
@@ -131,9 +108,9 @@ function renderOnboardingActions() {
 
 export function updateUIText() {
   const t = getT();
+  updateDocumentText(t);
   updateLanguageControls();
   dom.uiTitle.innerText = t.title;
-  if (state.currentLevel === 5 && state.activeLevel5Scenario) renderLevel5HUD(state.activeLevel5Scenario);
 
   const renderContent = () => {
     if (state.obState === 'mobileWarning') {
@@ -182,9 +159,10 @@ export function updateUIText() {
 }
 
 export function renderCameraError() {
-  dom.obContent.innerHTML = '<p class="error-text">Optical link failed. Please enable camera access in your browser to play.</p>';
+  const t = getT();
+  dom.obContent.innerHTML = `<p class="error-text">${t.cameraError}</p>`;
   clearChildren(dom.obActions);
-  dom.obActions.appendChild(createButton('Retry', actions.onStartScanner));
+  dom.obActions.appendChild(createButton(t.btnRetry, actions.onStartScanner));
 }
 
 export function showPlanetFact(planetName, onDone) {
@@ -269,12 +247,11 @@ export function showLevelComplete(levelNumber) {
     5: { title: t.statusLevel5Win, fact: getLevel5ScenarioFact(state.activeLevel5Scenario, state.currentLang) || t.level4Fact, buttonLabel: t.btnRestart, onClick: () => location.reload() }
   }[levelNumber];
 
-  setLevel5HUDVisible(false);
   dom.winLayer.style.display = 'flex';
   dom.winLayer.style.opacity = '0';
   dom.winLayer.innerHTML = `
     <div class="win-box">
-      <img src="logo.png" alt="Solary Logo" style="height:80px; margin-bottom:20px;" />
+      <img src="logo.png" alt="${t.logoAlt}" style="height:80px; margin-bottom:20px;" />
       <h1>${config.title}</h1>
       <p>${config.fact}</p>
       <button class="ob-btn" id="level-complete-btn">${config.buttonLabel}</button>
@@ -290,7 +267,7 @@ export function showLevelComplete(levelNumber) {
 async function shareScorecard(timeStr, acc, rawText, btnElem) {
   const t = getT();
   const originalText = btnElem.innerText;
-  btnElem.innerText = '...';
+  btnElem.innerText = t.btnLoading;
   btnElem.style.pointerEvents = 'none';
 
   const canvas = document.createElement('canvas');
@@ -346,11 +323,11 @@ async function shareScorecard(timeStr, acc, rawText, btnElem) {
 
   ctx.fillStyle = '#fff';
   ctx.font = '300 40px Inter, sans-serif';
-  ctx.fillText(state.currentLang === 'en' ? 'TIME' : 'WAKTU', 540, 550);
+  ctx.fillText(t.scorecardTimeLabel, 540, 550);
   ctx.font = '600 65px Inter, sans-serif';
   ctx.fillText(timeStr, 540, 620);
   ctx.font = '300 40px Inter, sans-serif';
-  ctx.fillText(`${state.currentLang === 'en' ? 'ACCURACY' : 'AKURASI'}: ${acc}%`, 540, 690);
+  ctx.fillText(`${t.scorecardAccuracyLabel}: ${acc}%`, 540, 690);
   ctx.fillStyle = '#888';
   ctx.font = '400 35px Inter, sans-serif';
   ctx.fillText('solary.litegral.com', 540, 980);
@@ -382,7 +359,7 @@ async function shareScorecard(timeStr, acc, rawText, btnElem) {
     a.remove();
     URL.revokeObjectURL(url);
     track('Share Success', { method: 'Download' });
-    restoreBtn(state.currentLang === 'en' ? 'Downloaded!' : 'Diunduh!');
+    restoreBtn(t.btnDownloaded);
   }, 'image/png');
 }
 
@@ -394,7 +371,7 @@ export function triggerWinState(scene, camera) {
   const timeTaken = Math.floor((Date.now() - state.gameStartTime) / 1000);
   const m = Math.floor(timeTaken / 60);
   const s = timeTaken % 60;
-  const timeStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
+  const timeStr = m > 0 ? `${m}${t.minuteUnit} ${s}${t.secondUnit}` : `${s}${t.secondUnit}`;
   const acc = state.totalDrops > 0 ? Math.max(0, Math.round(((state.totalDrops - state.mistakeCount) / state.totalDrops) * 100)) : 100;
   const statsText = t.winStats.replace('{time}', timeStr).replace('{acc}', acc);
   const shareTextRaw = t.shareText.replace('{time}', timeStr).replace('{acc}', acc);
@@ -404,12 +381,11 @@ export function triggerWinState(scene, camera) {
       ? t.level4Fact
       : t.level3Fact;
 
-  setLevel5HUDVisible(false);
   dom.winLayer.style.display = 'flex';
   dom.winLayer.style.opacity = '0';
   dom.winLayer.innerHTML = `
     <div class="win-box">
-      <img src="logo.png" alt="Solary Logo" style="height:80px; margin-bottom:20px;" />
+      <img src="logo.png" alt="${t.logoAlt}" style="height:80px; margin-bottom:20px;" />
       <h1>✨ ${t.statusWin} ✨</h1>
       <p>${statsText}</p>
       <p style="max-width:560px; margin: 0 auto 30px;">${finalFact}</p>

@@ -6,9 +6,6 @@ import {
   configureUIActions,
   handleFactCardGestureClose,
   renderCameraError,
-  renderLevel5HUD,
-  setLevel5HUDAnswerState,
-  setLevel5HUDVisible,
   showLevelComplete,
   showPlanetFact,
   triggerWinState,
@@ -35,6 +32,38 @@ function applyLanguage(langCode) {
   setLanguage(langCode);
   updateUIText();
   updateFactButtonText();
+  refreshCurrentLevelText();
+}
+
+function refreshCurrentLevelText() {
+  if (!gameWorld?.world?.scene) return;
+
+  if (state.currentLevel === 1) {
+    gameWorld.createLevel1Planets(getT());
+    return;
+  }
+
+  if (state.currentLevel === 2) {
+    gameWorld.createLevel2Moons({ ...getT(), noMoons: getT().level2NoMoons });
+    return;
+  }
+
+  if (state.currentLevel === 3) {
+    gameWorld.createLevel3Objects(getT());
+    return;
+  }
+
+  if (state.currentLevel === 4) {
+    gameWorld.createLevel4Classification(getT());
+    return;
+  }
+
+  if (state.currentLevel === 5 && state.activeLevel5Scenario) {
+    gameWorld.createLevel5Question(state.activeLevel5Scenario, {
+      ...getT(),
+      lang: state.currentLang
+    });
+  }
 }
 
 function chooseLanguage(langCode) {
@@ -136,7 +165,7 @@ function setCameraForLevel(level, animate = true) {
 }
 
 function placeAllPlanetsForDebug() {
-  if (gameWorld.world.planets.length === 0) gameWorld.createLevel1Planets();
+  if (gameWorld.world.planets.length === 0) gameWorld.createLevel1Planets(getT());
 
   gameWorld.world.planets.forEach((planet, index) => {
     planet.placed = true;
@@ -155,14 +184,11 @@ function placeAllPlanetsForDebug() {
 }
 
 function forceGameplayMode(statusText = getT().statusDrag) {
-  state.onboardingComplete = true;
+  hideOnboardingLayer();
   state.interactionLocked = false;
   state.levelTransitioning = false;
   state.gameStartTime = Date.now();
-  dom.onboardingLayer.style.display = 'none';
-  dom.onboardingLayer.style.opacity = '0';
   dom.stats.style.display = 'inline-block';
-  setLevel5HUDVisible(false);
   updateStats(statusText, '');
   startSpaceBGM();
 }
@@ -195,7 +221,6 @@ function handleOnboarding(currentGesture) {
 
 function startLevel2() {
   track('Level 2 Started');
-  setLevel5HUDVisible(false);
   state.currentLevel = 2;
   state.grabbedPlanet = null;
   state.grabbedMoon = null;
@@ -213,7 +238,7 @@ function startLevel2() {
     onComplete: () => {
       dom.winLayer.style.display = 'none';
       dom.winLayer.innerHTML = '';
-      gameWorld.createLevel2Moons({ noMoons: getT().level2NoMoons });
+      gameWorld.createLevel2Moons({ ...getT(), noMoons: getT().level2NoMoons });
       setPresentationForLevel(2);
       setCameraForLevel(2);
       updateStats(getT().statusMoonDrag, '');
@@ -223,7 +248,6 @@ function startLevel2() {
 
 function startLevel3() {
   track('Level 3 Started');
-  setLevel5HUDVisible(false);
   state.currentLevel = 3;
   state.grabbedPlanet = null;
   state.grabbedMoon = null;
@@ -241,7 +265,7 @@ function startLevel3() {
     onComplete: () => {
       dom.winLayer.style.display = 'none';
       dom.winLayer.innerHTML = '';
-      gameWorld.createLevel3Objects();
+      gameWorld.createLevel3Objects(getT());
       setPresentationForLevel(3);
       setCameraForLevel(3);
       updateStats(getT().statusLevel3Drag, '');
@@ -249,14 +273,68 @@ function startLevel3() {
   });
 }
 
+function cloneScenario(scenario) {
+  return typeof structuredClone === 'function' ? structuredClone(scenario) : JSON.parse(JSON.stringify(scenario));
+}
+
 function getRandomLevel5Scenario() {
   const scenario = level5ScenarioDefs[Math.floor(Math.random() * level5ScenarioDefs.length)];
-  return typeof structuredClone === 'function' ? structuredClone(scenario) : JSON.parse(JSON.stringify(scenario));
+  return cloneScenario(scenario);
+}
+
+function hideOnboardingLayer() {
+  state.onboardingComplete = true;
+  dom.onboardingLayer.style.display = 'none';
+  dom.onboardingLayer.style.opacity = '0';
+}
+
+function buildLevel5ScenarioQueue() {
+  const pool = level5ScenarioDefs.map(cloneScenario);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(state.level5TargetCount, pool.length));
+}
+
+function getLevel5ProgressText() {
+  return `${state.level5CompletedCount + 1}/${state.level5ScenarioQueue.length || state.level5TargetCount}`;
+}
+
+function loadActiveLevel5Scenario(delay = 1200) {
+  state.activeLevel5Scenario = state.level5ScenarioQueue[state.level5CompletedCount] || null;
+  state.level5Resolved = false;
+  state.level5LastGesture = 'None';
+  state.level5GestureHold = 'None';
+  state.level5GestureStartedAt = 0;
+  state.level5ReadyAt = Date.now() + delay;
+  state.level5CooldownUntil = Date.now() + delay;
+
+  if (!state.activeLevel5Scenario) return;
+
+  gameWorld.createLevel5Question(state.activeLevel5Scenario, {
+    ...getT(),
+    kicker: `${getT().level5Title} • ${getLevel5ProgressText()}`,
+    prompt: getT().level5Question,
+    hint: getT().level5Hint,
+    lang: state.currentLang
+  });
+}
+
+function advanceLevel5Question() {
+  state.level5CompletedCount += 1;
+  if (state.level5CompletedCount >= state.level5ScenarioQueue.length) {
+    setTimeout(() => triggerWinState(gameWorld.world.scene, gameWorld.world.camera), 700);
+    return;
+  }
+
+  setTimeout(() => {
+    loadActiveLevel5Scenario(1200);
+  }, 900);
 }
 
 function startLevel4() {
   track('Level 4 Started');
-  setLevel5HUDVisible(false);
   state.currentLevel = 4;
   state.grabbedPlanet = null;
   state.grabbedMoon = null;
@@ -274,7 +352,7 @@ function startLevel4() {
     onComplete: () => {
       dom.winLayer.style.display = 'none';
       dom.winLayer.innerHTML = '';
-      gameWorld.createLevel4Classification();
+      gameWorld.createLevel4Classification(getT());
       setPresentationForLevel(4);
       setCameraForLevel(4);
       updateStats(getT().statusLevel4Drag, '');
@@ -284,7 +362,7 @@ function startLevel4() {
 
 function startLevel5() {
   track('Level 5 Started');
-  setLevel5HUDVisible(false);
+  hideOnboardingLayer();
   state.currentLevel = 5;
   state.grabbedPlanet = null;
   state.grabbedMoon = null;
@@ -292,10 +370,15 @@ function startLevel5() {
   state.grabbedClassificationItem = null;
   state.interactionLocked = false;
   state.levelTransitioning = false;
+  state.level5ScenarioQueue = buildLevel5ScenarioQueue();
+  state.level5CompletedCount = 0;
   state.level5Resolved = false;
   state.level5LastGesture = 'None';
-  state.activeLevel5Scenario = getRandomLevel5Scenario();
-  state.level5ReadyAt = Date.now() + 900;
+  state.level5GestureHold = 'None';
+  state.level5GestureStartedAt = 0;
+  state.activeLevel5Scenario = null;
+  state.level5ReadyAt = Date.now() + 1200;
+  state.level5CooldownUntil = Date.now() + 1200;
 
   gsap.to(dom.winLayer, {
     opacity: 0,
@@ -303,19 +386,10 @@ function startLevel5() {
     onComplete: () => {
       dom.winLayer.style.display = 'none';
       dom.winLayer.innerHTML = '';
-      gameWorld.createLevel5Question(state.activeLevel5Scenario, {
-        kicker: getT().level5Title,
-        prompt: getT().level5Question,
-        hint: getT().level5Hint,
-        lang: state.currentLang
-      });
-      renderLevel5HUD(state.activeLevel5Scenario);
       setPresentationForLevel(5);
       setCameraForLevel(5);
-      updateStats(
-        getT().statusLevel5Prompt.replace('{planet}', getT().planetNames[state.activeLevel5Scenario.planet] || state.activeLevel5Scenario.planet),
-        ''
-      );
+      dom.stats.style.display = 'none';
+      loadActiveLevel5Scenario(1200);
     }
   });
 }
@@ -400,14 +474,9 @@ function handleInteraction() {
       currentGesture,
       answers: gameWorld.world.level5Answers,
       state,
-      getT,
-      updateStats,
       playSuccessSFX,
       playErrorSFX,
-      triggerWinState,
-      setLevel5HUDAnswerState,
-      scene: gameWorld.world.scene,
-      camera: gameWorld.world.camera,
+      advanceLevel5Question,
       track
     });
     return;
@@ -460,7 +529,7 @@ function setupDebugConsole() {
       }
 
       forceGameplayMode(
-        level === 1 ? getT().statusDrag : level === 2 ? getT().statusMoonDrag : level === 3 ? getT().statusLevel3Drag : level === 4 ? getT().statusLevel4Drag : getT().statusLevel5Prompt.replace('{planet}', 'Planet')
+        level === 1 ? getT().statusDrag : level === 2 ? getT().statusMoonDrag : level === 3 ? getT().statusLevel3Drag : level === 4 ? getT().statusLevel4Drag : ''
       );
 
       state.grabbedPlanet = null;
@@ -472,11 +541,9 @@ function setupDebugConsole() {
       dom.winLayer.style.display = 'none';
       dom.winLayer.style.opacity = '0';
       dom.winLayer.innerHTML = '';
-      setLevel5HUDVisible(false);
-
       if (level === 1) {
         state.currentLevel = 1;
-        gameWorld.createLevel1Planets();
+        gameWorld.createLevel1Planets(getT());
         setPresentationForLevel(1);
         setCameraForLevel(1);
         console.log('%cWarped to Level 1 🪐', badge);
@@ -487,7 +554,7 @@ function setupDebugConsole() {
 
       if (level === 2) {
         state.currentLevel = 2;
-        gameWorld.createLevel2Moons({ noMoons: getT().level2NoMoons });
+        gameWorld.createLevel2Moons({ ...getT(), noMoons: getT().level2NoMoons });
         setPresentationForLevel(2);
         setCameraForLevel(2);
         updateStats(getT().statusMoonDrag, '');
@@ -497,7 +564,7 @@ function setupDebugConsole() {
 
       if (level === 3) {
         state.currentLevel = 3;
-        gameWorld.createLevel3Objects();
+        gameWorld.createLevel3Objects(getT());
         setPresentationForLevel(3);
         setCameraForLevel(3);
         updateStats(getT().statusLevel3Drag, '');
@@ -507,7 +574,7 @@ function setupDebugConsole() {
 
       if (level === 4) {
         state.currentLevel = 4;
-        gameWorld.createLevel4Classification();
+        gameWorld.createLevel4Classification(getT());
         setPresentationForLevel(4);
         setCameraForLevel(4);
         updateStats(getT().statusLevel4Drag, '');
@@ -517,22 +584,13 @@ function setupDebugConsole() {
 
       if (level === 5) {
         state.currentLevel = 5;
-        state.activeLevel5Scenario = getRandomLevel5Scenario();
-        state.level5ReadyAt = Date.now() + 400;
-        gameWorld.createLevel5Question(state.activeLevel5Scenario, {
-          kicker: getT().level5Title,
-          prompt: getT().level5Question,
-          hint: getT().level5Hint,
-          lang: state.currentLang
-        });
-        renderLevel5HUD(state.activeLevel5Scenario);
+        state.level5ScenarioQueue = buildLevel5ScenarioQueue();
+        state.level5CompletedCount = 0;
         setPresentationForLevel(5);
         setCameraForLevel(5);
-        updateStats(
-          getT().statusLevel5Prompt.replace('{planet}', getT().planetNames[state.activeLevel5Scenario.planet] || state.activeLevel5Scenario.planet),
-          ''
-        );
-        console.log('%cWarped to Level 5 ☠️', badge, state.activeLevel5Scenario.planet);
+        dom.stats.style.display = 'none';
+        loadActiveLevel5Scenario(700);
+        console.log('%cWarped to Level 5 ☠️', badge, state.level5ScenarioQueue[0]?.planet);
         return;
       }
 
@@ -587,7 +645,7 @@ function bootstrap() {
   if (state.savedLang) applyLanguage(state.savedLang);
   else updateUIText();
 
-  gameWorld.init();
+  gameWorld.init(getT());
   setPresentationForLevel(1);
   setupDebugConsole();
   animate();

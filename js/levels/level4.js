@@ -44,7 +44,7 @@ export function handleLevel4Interaction({
 
     if (targetBucket) {
       state.totalDrops++;
-      const itemName = state.grabbedClassificationItem.def.name;
+      const itemName = t.spaceObjectNames[state.grabbedClassificationItem.def.name] || state.grabbedClassificationItem.def.name;
       const categoryLabel = t.level4Categories[targetBucket.userData.key];
 
       if (targetBucket.userData.key === state.grabbedClassificationItem.def.category) {
