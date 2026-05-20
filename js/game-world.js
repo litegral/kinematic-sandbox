@@ -255,6 +255,7 @@ export function createGameWorld(container) {
       world.scene.remove(answer.panel);
       if (answer.label) world.scene.remove(answer.label);
       if (answer.gestureBadge) world.scene.remove(answer.gestureBadge);
+      if (answer.fillBar) world.scene.remove(answer.fillBar);
     });
     world.level5Answers.length = 0;
   }
@@ -616,10 +617,19 @@ export function createGameWorld(container) {
       });
       label.position.set(def.x + 12, def.y, 2);
 
+      // Fill bar: same dimensions as panel, slightly in front. Grows left-to-right during hold.
+      const fillBar = new THREE.Mesh(
+        new THREE.PlaneGeometry(176, 46),
+        new THREE.MeshBasicMaterial({ color: 0x4a9eff, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide })
+      );
+      fillBar.position.set(def.x - 88, def.y, 1); // anchored at left edge initially
+      fillBar.scale.x = 0.001;
+
       world.scene.add(panel);
+      world.scene.add(fillBar);
       world.scene.add(gestureBadge);
       world.scene.add(label);
-      world.level5Answers.push({ ...def, panel, label, gestureBadge, baseY: def.y, baseLabelScale: label.scale.clone(), baseGestureScale: gestureBadge.scale.clone() });
+      world.level5Answers.push({ ...def, panel, fillBar, label, gestureBadge, baseY: def.y, baseLabelScale: label.scale.clone(), baseGestureScale: gestureBadge.scale.clone() });
     });
   }
 
@@ -787,6 +797,11 @@ export function createGameWorld(container) {
       if (answer.gestureBadge) {
         answer.gestureBadge.position.y = answer.panel.position.y;
         answer.gestureBadge.position.x = answer.panel.position.x - 66;
+      }
+      if (answer.fillBar) {
+        // y and rotation track with the floating panel; x is driven by level5 interaction
+        answer.fillBar.position.y = answer.panel.position.y;
+        answer.fillBar.rotation.z = answer.panel.rotation.z;
       }
     }
   }
