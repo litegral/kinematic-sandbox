@@ -144,6 +144,41 @@ export function createGameWorld(container) {
     return sprite;
   }
 
+  function createTexturedPlanetModel(def) {
+    const model = new THREE.Group();
+    const radius = def.size;
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(radius, 32, 32),
+      new THREE.MeshPhongMaterial({
+        color: def.color,
+        map: world.textureLoader.load(def.texture),
+        shininess: 10
+      })
+    );
+
+    model.add(sphere);
+    model.userData.sphere = sphere;
+
+    if (def.hasRing) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(radius * 1.45, radius * 2.25, 64),
+        new THREE.MeshBasicMaterial({
+          color: 0xf2d694,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.72,
+          depthWrite: false
+        })
+      );
+      ring.rotation.x = Math.PI * 0.42;
+      ring.rotation.y = Math.PI * 0.08;
+      model.add(ring);
+      model.userData.ring = ring;
+    }
+
+    return model;
+  }
+
   function getLocalizedName(dictionary, key) {
     return dictionary?.[key] || key;
   }
@@ -445,10 +480,7 @@ export function createGameWorld(container) {
     });
 
     level4ItemDefs.forEach((def, index) => {
-      const mesh = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(def.size, 0),
-        new THREE.MeshPhongMaterial({ color: def.color, shininess: 35, flatShading: true })
-      );
+      const mesh = createTexturedPlanetModel(def);
 
       const side = index % 2 === 0 ? -1 : 1;
       const row = Math.floor(index / 2);
@@ -456,19 +488,15 @@ export function createGameWorld(container) {
       const spawnY = 96 - row * 34;
       mesh.position.set(spawnX, spawnY, 8);
 
-      const artSprite = createSpaceObjectArtSprite(def);
-      artSprite.position.set(spawnX, spawnY + 10, 7);
-
       const label = createTextSprite(getLocalizedName(uiText.spaceObjectNames, def.name), { fontSize: 36, scale: 0.1 });
-      label.position.set(spawnX, spawnY - 5.5, 10);
+      label.position.set(spawnX, spawnY - def.size - 4, 10);
 
       world.scene.add(mesh);
-      world.scene.add(artSprite);
       world.scene.add(label);
 
       world.level4Items.push({
         mesh,
-        artSprite,
+        artSprite: null,
         label,
         def,
         placed: false,
@@ -537,6 +565,19 @@ export function createGameWorld(container) {
     title.position.set(0, 84, 3);
     world.scene.add(title);
     world.level5QuestionLabels.push(title);
+
+    const question = createTextSprite(uiText.level5Question || '', {
+      fontSize: 38,
+      scale: 0.13,
+      background: 'rgba(8, 12, 22, 0.82)',
+      border: 'rgba(255,255,255,0.14)',
+      color: '#f5f7ff',
+      paddingX: 36,
+      paddingY: 20
+    });
+    question.position.set(0, 64, 3);
+    world.scene.add(question);
+    world.level5QuestionLabels.push(question);
 
     const gestureMap = [
       { gesture: 'Peace', symbol: '✌️', x: -92, y: -10, color: 0x182337 },
@@ -713,20 +754,25 @@ export function createGameWorld(container) {
     for (const item of world.level4Items) {
       item.mesh.rotation.x += 0.004;
       item.mesh.rotation.y += 0.006;
+      const labelOffset = item.def.size + 4;
       if (!item.placed && item !== grabbedClassificationItem) {
         item.mesh.position.y += Math.sin(Date.now() * 0.002 + item.phase) * 0.04;
-        item.artSprite.position.x = item.mesh.position.x;
-        item.artSprite.position.y = item.mesh.position.y + 10;
-        item.artSprite.position.z = item.mesh.position.z - 1;
+        if (item.artSprite) {
+          item.artSprite.position.x = item.mesh.position.x;
+          item.artSprite.position.y = item.mesh.position.y + 10;
+          item.artSprite.position.z = item.mesh.position.z - 1;
+        }
         item.label.position.x = item.mesh.position.x;
-        item.label.position.y = item.mesh.position.y - 4.5;
+        item.label.position.y = item.mesh.position.y - labelOffset;
         item.label.position.z = item.mesh.position.z + 2;
       } else if (item.placed && item !== grabbedClassificationItem) {
-        item.artSprite.position.x = item.mesh.position.x;
-        item.artSprite.position.y = item.mesh.position.y + 9;
-        item.artSprite.position.z = 7;
+        if (item.artSprite) {
+          item.artSprite.position.x = item.mesh.position.x;
+          item.artSprite.position.y = item.mesh.position.y + 9;
+          item.artSprite.position.z = 7;
+        }
         item.label.position.x = item.mesh.position.x;
-        item.label.position.y = item.mesh.position.y - 4.5;
+        item.label.position.y = item.mesh.position.y - labelOffset;
         item.label.position.z = 10;
       }
     }

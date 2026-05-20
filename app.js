@@ -7,6 +7,7 @@ import {
   handleFactCardGestureClose,
   renderCameraError,
   showLevelComplete,
+  showLevel5Guide,
   showPlanetFact,
   triggerWinState,
   updateFactButtonText,
@@ -33,6 +34,7 @@ function applyLanguage(langCode) {
   updateUIText();
   updateFactButtonText();
   refreshCurrentLevelText();
+  if (state.currentLevel === 5) clearLevel5OverlayText();
 }
 
 function refreshCurrentLevelText() {
@@ -121,11 +123,12 @@ function returnSpaceObjectToSpawn(object) {
 }
 
 function returnClassificationItemToSpawn(item) {
+  const labelOffset = (item.def?.size || 0) + 4;
   gsap.to(item.mesh.position, { x: item.spawnX, y: item.spawnY, z: 8, duration: 0.8, ease: 'back.out(1.2)' });
   if (item.artSprite) {
     gsap.to(item.artSprite.position, { x: item.spawnX, y: item.spawnY + 10, z: 7, duration: 0.8, ease: 'back.out(1.2)' });
   }
-  gsap.to(item.label.position, { x: item.spawnX, y: item.spawnY - 4.5, z: 10, duration: 0.8, ease: 'back.out(1.2)' });
+  gsap.to(item.label.position, { x: item.spawnX, y: item.spawnY - labelOffset, z: 10, duration: 0.8, ease: 'back.out(1.2)' });
 }
 
 function setPresentationForLevel(level) {
@@ -288,6 +291,17 @@ function hideOnboardingLayer() {
   dom.onboardingLayer.style.opacity = '0';
 }
 
+function removeLegacyLevel5HUD() {
+  document.getElementById('level5-hud')?.remove();
+}
+
+function clearLevel5OverlayText() {
+  removeLegacyLevel5HUD();
+  dom.stats.style.display = 'none';
+  dom.stats.innerText = '';
+  dom.stats.className = '';
+}
+
 function buildLevel5ScenarioQueue() {
   const pool = level5ScenarioDefs.map(cloneScenario);
   for (let i = pool.length - 1; i > 0; i--) {
@@ -314,9 +328,6 @@ function loadActiveLevel5Scenario(delay = 1200) {
 
   gameWorld.createLevel5Question(state.activeLevel5Scenario, {
     ...getT(),
-    kicker: `${getT().level5Title} • ${getLevel5ProgressText()}`,
-    prompt: getT().level5Question,
-    hint: getT().level5Hint,
     lang: state.currentLang
   });
 }
@@ -363,6 +374,7 @@ function startLevel4() {
 function startLevel5() {
   track('Level 5 Started');
   hideOnboardingLayer();
+  clearLevel5OverlayText();
   state.currentLevel = 5;
   state.grabbedPlanet = null;
   state.grabbedMoon = null;
@@ -386,9 +398,9 @@ function startLevel5() {
     onComplete: () => {
       dom.winLayer.style.display = 'none';
       dom.winLayer.innerHTML = '';
+      clearLevel5OverlayText();
       setPresentationForLevel(5);
       setCameraForLevel(5);
-      dom.stats.style.display = 'none';
       loadActiveLevel5Scenario(1200);
     }
   });
@@ -528,9 +540,18 @@ function setupDebugConsole() {
         return;
       }
 
-      forceGameplayMode(
-        level === 1 ? getT().statusDrag : level === 2 ? getT().statusMoonDrag : level === 3 ? getT().statusLevel3Drag : level === 4 ? getT().statusLevel4Drag : ''
-      );
+      if (level === 5) {
+        hideOnboardingLayer();
+        state.interactionLocked = false;
+        state.levelTransitioning = false;
+        state.gameStartTime = Date.now();
+        startSpaceBGM();
+        clearLevel5OverlayText();
+      } else {
+        forceGameplayMode(
+          level === 1 ? getT().statusDrag : level === 2 ? getT().statusMoonDrag : level === 3 ? getT().statusLevel3Drag : level === 4 ? getT().statusLevel4Drag : ''
+        );
+      }
 
       state.grabbedPlanet = null;
       state.grabbedMoon = null;
@@ -586,11 +607,19 @@ function setupDebugConsole() {
         state.currentLevel = 5;
         state.level5ScenarioQueue = buildLevel5ScenarioQueue();
         state.level5CompletedCount = 0;
-        setPresentationForLevel(5);
-        setCameraForLevel(5);
-        dom.stats.style.display = 'none';
-        loadActiveLevel5Scenario(700);
-        console.log('%cWarped to Level 5 ☠️', badge, state.level5ScenarioQueue[0]?.planet);
+        state.level5Resolved = false;
+        state.level5LastGesture = 'None';
+        state.level5GestureHold = 'None';
+        state.level5GestureStartedAt = 0;
+        state.activeLevel5Scenario = null;
+        clearLevel5OverlayText();
+        showLevel5Guide(() => {
+          clearLevel5OverlayText();
+          setPresentationForLevel(5);
+          setCameraForLevel(5);
+          loadActiveLevel5Scenario(700);
+          console.log('%cWarped to Level 5 ☠️', badge, state.level5ScenarioQueue[0]?.planet);
+        });
         return;
       }
 
@@ -610,7 +639,10 @@ function setupDebugConsole() {
         moons: gameWorld.world.moons.length,
         spaceObjects: gameWorld.world.spaceObjects.length,
         classificationItems: gameWorld.world.level4Items.length,
-        level5Planet: state.activeLevel5Scenario?.planet || null
+        level5Planet: state.activeLevel5Scenario?.planet || null,
+        level5CompletedCount: state.level5CompletedCount,
+        level5QueueLength: state.level5ScenarioQueue.length,
+        level5TargetCount: state.level5TargetCount
       });
     }
   };
@@ -621,6 +653,7 @@ function setupDebugConsole() {
 
 function bootstrap() {
   cacheDom();
+  removeLegacyLevel5HUD();
   initAudioUI();
 
   gameWorld = createGameWorld(dom.canvasContainer);

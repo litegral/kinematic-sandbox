@@ -45,7 +45,7 @@ export const i18n = {
     level5Badge: 'Final Challenge',
     level5Question: 'What kills you first?',
     level5Hint: 'Hold ✌️ 👍 🤘 🖖 for a moment to answer',
-    statusLevel5Prompt: '{planet}: what kills you first? Hold ✌️ 👍 🤘 🖖 for a moment to answer.',
+    level5HowToPlay: 'In Level 5, pick an answer by making the matching hand gesture: ✌️, 👍, 🤘, or 🖖. Hold it for a moment to confirm.',
     statusLevel5Correct: 'Correct! {answer}',
     statusLevel5Wrong: 'Not quite. {answer} is not the first danger on {planet}.',
     statusLevel5Win: 'You survived the final space quiz!',
@@ -181,7 +181,7 @@ export const i18n = {
     level5Badge: 'Tantangan Final',
     level5Question: 'Apa yang membunuhmu lebih dulu?',
     level5Hint: 'Tahan ✌️ 👍 🤘 🖖 sebentar untuk menjawab',
-    statusLevel5Prompt: '{planet}: apa yang membunuhmu lebih dulu? Tahan ✌️ 👍 🤘 🖖 sebentar untuk menjawab.',
+    level5HowToPlay: 'Di Level 5, pilih jawaban dengan membuat gestur tangan yang sesuai: ✌️, 👍, 🤘, atau 🖖. Tahan sebentar untuk mengonfirmasi.',
     statusLevel5Correct: 'Benar! {answer}',
     statusLevel5Wrong: 'Belum tepat. {answer} bukan bahaya pertama di {planet}.',
     statusLevel5Win: 'Kamu menaklukkan kuis akhir tata surya!',
@@ -317,18 +317,18 @@ export const level4CategoryDefs = [
 ];
 
 export const level4ItemDefs = [
-  { name: 'Mercury', category: 'terrestrial', color: 0xb0bec5, size: 2.8, speed: 0.004, art: { symbol: '☿', illustration: '', accent: '#b0bec5' } },
-  { name: 'Venus', category: 'terrestrial', color: 0xd7b98e, size: 3.2, speed: 0.0038, art: { symbol: '♀', illustration: '', accent: '#d7b98e' } },
-  { name: 'Earth', category: 'terrestrial', color: 0x81d4fa, size: 3.3, speed: 0.0038, art: { symbol: '🌍', illustration: '', accent: '#81d4fa' } },
-  { name: 'Mars', category: 'terrestrial', color: 0xff8a65, size: 3.0, speed: 0.004, art: { symbol: '♂', illustration: '', accent: '#ff8a65' } },
-  { name: 'Jupiter', category: 'gas', color: 0xffcc80, size: 4.2, speed: 0.0032, art: { symbol: '♃', illustration: '', accent: '#ffcc80' } },
-  { name: 'Saturn', category: 'gas', color: 0xffe082, size: 3.9, speed: 0.0032, art: { symbol: '🪐', illustration: '', accent: '#ffe082' } },
-  { name: 'Uranus', category: 'ice', color: 0x80deea, size: 3.5, speed: 0.0032, art: { symbol: '⛢', illustration: '', accent: '#80deea' } },
-  { name: 'Neptune', category: 'ice', color: 0x64b5f6, size: 3.5, speed: 0.0032, art: { symbol: '♆', illustration: '', accent: '#64b5f6' } },
-  { name: 'Pluto', category: 'dwarf', color: 0xd7ccc8, size: 2.9, speed: 0.0035, art: { symbol: '❄️', illustration: '', accent: '#d7ccc8' } },
-  { name: 'Eris', category: 'dwarf', color: 0xe0e0e0, size: 2.9, speed: 0.0035, art: { symbol: '✦', illustration: '', accent: '#e0e0e0' } },
-  { name: 'Ceres', category: 'dwarf', color: 0xcfd8dc, size: 2.9, speed: 0.0035, art: { symbol: '🪨', illustration: '', accent: '#cfd8dc' } },
-  { name: 'Makemake', category: 'dwarf', color: 0xffccbc, size: 2.9, speed: 0.0035, art: { symbol: '❄️', illustration: '', accent: '#ffccbc' } }
+  { name: 'Mercury', category: 'terrestrial', color: 0xb0bec5, texture: 'textures/2k_mercury.jpg', size: 2.8, speed: 0.004 },
+  { name: 'Venus', category: 'terrestrial', color: 0xd7b98e, texture: 'textures/2k_venus_surface.jpg', size: 3.2, speed: 0.0038 },
+  { name: 'Earth', category: 'terrestrial', color: 0x81d4fa, texture: 'textures/2k_earth_daymap.jpg', size: 3.3, speed: 0.0038 },
+  { name: 'Mars', category: 'terrestrial', color: 0xff8a65, texture: 'textures/2k_mars.jpg', size: 3.0, speed: 0.004 },
+  { name: 'Jupiter', category: 'gas', color: 0xffcc80, texture: 'textures/2k_jupiter.jpg', size: 4.2, speed: 0.0032 },
+  { name: 'Saturn', category: 'gas', color: 0xffe082, texture: 'textures/2k_saturn.jpg', size: 3.9, speed: 0.0032, hasRing: true },
+  { name: 'Uranus', category: 'ice', color: 0x80deea, texture: 'textures/2k_uranus.jpg', size: 3.5, speed: 0.0032 },
+  { name: 'Neptune', category: 'ice', color: 0x64b5f6, texture: 'textures/2k_neptune.jpg', size: 3.5, speed: 0.0032 },
+  { name: 'Pluto', category: 'dwarf', color: 0xd7ccc8, texture: 'textures/2k_mercury.jpg', size: 2.9, speed: 0.0035 },
+  { name: 'Eris', category: 'dwarf', color: 0xe0e0e0, texture: 'textures/2k_uranus.jpg', size: 2.9, speed: 0.0035 },
+  { name: 'Ceres', category: 'dwarf', color: 0xcfd8dc, texture: 'textures/2k_mercury.jpg', size: 2.9, speed: 0.0035 },
+  { name: 'Makemake', category: 'dwarf', color: 0xffccbc, texture: 'textures/2k_mars.jpg', size: 2.9, speed: 0.0035 }
 ];
 
 export const level5ScenarioDefs = [

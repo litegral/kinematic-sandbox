@@ -79,7 +79,7 @@ export function handleLevel4Interaction({
         }
         gsap.to(state.grabbedClassificationItem.label.position, {
           x: targetX,
-          y: targetY - 4.5,
+          y: targetY - (state.grabbedClassificationItem.def.size + 4),
           z: 10,
           duration: 0.35,
           ease: 'power2.out'
@@ -134,6 +134,6 @@ export function handleLevel4Interaction({
     if (state.grabbedClassificationItem.artSprite) {
       state.grabbedClassificationItem.artSprite.position.lerp(new THREE.Vector3(handWorldPos.x, handWorldPos.y + 10, 13), 0.4);
     }
-    state.grabbedClassificationItem.label.position.lerp(new THREE.Vector3(handWorldPos.x, handWorldPos.y - 4, 16), 0.4);
+    state.grabbedClassificationItem.label.position.lerp(new THREE.Vector3(handWorldPos.x, handWorldPos.y - (state.grabbedClassificationItem.def.size + 4), 16), 0.4);
   }
 }

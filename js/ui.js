@@ -63,8 +63,26 @@ export function configureUIActions(nextActions) {
   Object.assign(actions, nextActions);
 }
 
+let _statsFadeTimer = null;
+
 export function updateStats(text, className = '') {
-  if (dom.stats.innerText === text && dom.stats.className === className) return;
+  if (state.currentLevel === 5) {
+    dom.stats.style.display = 'none';
+    dom.stats.innerText = '';
+    dom.stats.className = '';
+    return;
+  }
+
+  // Cancel any pending fade-out and ensure full visibility
+  if (_statsFadeTimer) { clearTimeout(_statsFadeTimer); _statsFadeTimer = null; }
+  gsap.killTweensOf(dom.stats, 'opacity');
+  dom.stats.style.display = 'inline-block';
+  gsap.set(dom.stats, { opacity: 1 });
+
+  if (dom.stats.innerText === text && dom.stats.className === className) {
+    scheduleStatsFade(className);
+    return;
+  }
   dom.stats.innerText = text;
   dom.stats.className = className;
   gsap.fromTo(dom.stats, { scale: 1.08 }, { scale: 1, duration: 0.3, ease: 'back.out(2)' });
@@ -72,6 +90,19 @@ export function updateStats(text, className = '') {
   if (className === 'error-text') {
     gsap.fromTo(dom.stats, { x: -10 }, { x: 0, duration: 0.4, ease: 'elastic.out(2, 0.2)' });
   }
+
+  scheduleStatsFade(className);
+}
+
+function scheduleStatsFade(className) {
+  // Feedback messages stay a bit longer than idle hints
+  const delay = (className === 'success-text' || className === 'error-text') ? 3500 : 2500;
+  _statsFadeTimer = setTimeout(() => {
+    gsap.to(dom.stats, { opacity: 0, duration: 0.6, ease: 'power2.in', onComplete: () => {
+      dom.stats.style.display = 'none';
+    }});
+    _statsFadeTimer = null;
+  }, delay);
 }
 
 export function updateFactButtonText() {
@@ -243,7 +274,7 @@ export function showLevelComplete(levelNumber) {
     1: { title: t.level1CompleteTitle, fact: t.level1Fact, buttonLabel: t.level2Btn, onClick: actions.onStartLevel2 },
     2: { title: t.statusMoonWin, fact: t.level2Fact, buttonLabel: t.level3Btn, onClick: actions.onStartLevel3 },
     3: { title: t.statusLevel3Win, fact: t.level3Fact, buttonLabel: t.level4Btn, onClick: actions.onStartLevel4 },
-    4: { title: t.statusLevel4Win, fact: t.level4Fact, buttonLabel: t.level5Btn, onClick: actions.onStartLevel5 },
+    4: { title: t.statusLevel4Win, fact: t.level4Fact, instruction: t.level5HowToPlay, buttonLabel: t.level5Btn, onClick: actions.onStartLevel5 },
     5: { title: t.statusLevel5Win, fact: getLevel5ScenarioFact(state.activeLevel5Scenario, state.currentLang) || t.level4Fact, buttonLabel: t.btnRestart, onClick: () => location.reload() }
   }[levelNumber];
 
@@ -254,6 +285,7 @@ export function showLevelComplete(levelNumber) {
       <img src="logo.png" alt="${t.logoAlt}" style="height:80px; margin-bottom:20px;" />
       <h1>${config.title}</h1>
       <p>${config.fact}</p>
+      ${config.instruction ? `<p class="level-complete-instruction">${config.instruction}</p>` : ''}
       <button class="ob-btn" id="level-complete-btn">${config.buttonLabel}</button>
     </div>
   `;
@@ -262,6 +294,36 @@ export function showLevelComplete(levelNumber) {
 
   gsap.to(dom.winLayer, { opacity: 1, duration: 0.5 });
   gsap.fromTo('.win-box', { scale: 0.8, y: 30 }, { scale: 1, y: 0, duration: 0.7, ease: 'back.out(1.2)' });
+}
+
+export function showLevel5Guide(onStart) {
+  const t = getT();
+
+  dom.winLayer.style.display = 'flex';
+  dom.winLayer.style.opacity = '0';
+  dom.winLayer.innerHTML = `
+    <div class="win-box">
+      <img src="logo.png" alt="${t.logoAlt}" style="height:80px; margin-bottom:20px;" />
+      <h1>${t.level5Title}</h1>
+      <p class="level-complete-instruction">${t.level5HowToPlay}</p>
+      <button class="ob-btn" id="level5-guide-start">${t.level5Btn}</button>
+    </div>
+  `;
+
+  dom.winLayer.querySelector('#level5-guide-start').addEventListener('click', () => {
+    gsap.to(dom.winLayer, {
+      opacity: 0,
+      duration: 0.25,
+      onComplete: () => {
+        dom.winLayer.style.display = 'none';
+        dom.winLayer.innerHTML = '';
+        onStart?.();
+      }
+    });
+  });
+
+  gsap.to(dom.winLayer, { opacity: 1, duration: 0.35 });
+  gsap.fromTo('.win-box', { scale: 0.92, y: 20 }, { scale: 1, y: 0, duration: 0.45, ease: 'back.out(1.2)' });
 }
 
 async function shareScorecard(timeStr, acc, rawText, btnElem) {
